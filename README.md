@@ -77,7 +77,7 @@ EMAIL_FROM=RECO Onboarding <onboarding@resend.dev>
 # Start the full-stack server
 node server.js
 ```
-Open **[http://localhost:8080](http://localhost:8080)** in your browser.
+Open **https://reco-revenue-platform-h7mmxgkum-bhavyas-projects-60020639.vercel.app/** in your browser.
 
 ---
 
