@@ -206,11 +206,7 @@ document.addEventListener('DOMContentLoaded', () => {
     } else if (viewName === 'customers') {
       renderCustomersGrid(metrics);
     } else if (viewName === 'simulator') {
-      ensureQuarterlyActionPlanCard();
-      hydrateSimulatorFromSavedPlan();
       updateSimulatorMath(uiState.simulatorTargetRate);
-      renderQuarterlyActionPlan();
-      syncApplyStrategyButton();
     } else if (viewName === 'reports') {
       renderReportsCharts(metrics);
     } else if (viewName === 'notifications') {
@@ -232,11 +228,7 @@ document.addEventListener('DOMContentLoaded', () => {
     else if (uiState.currentView === 'customers') renderCustomersGrid(metrics);
     else if (uiState.currentView === 'reports') renderReportsCharts(metrics);
     else if (uiState.currentView === 'notifications') renderNotificationList();
-    else if (uiState.currentView === 'simulator') {
-      updateSimulatorMath(uiState.simulatorTargetRate);
-      renderQuarterlyActionPlan();
-      syncApplyStrategyButton();
-    }
+    else if (uiState.currentView === 'simulator') updateSimulatorMath(uiState.simulatorTargetRate);
     else if (uiState.currentView === 'copilot') {
       populateCopilotInvoiceSelector(metrics.invoices);
       updateReminderComposer(uiState.selectedInvoiceId, uiState.currentTone);
@@ -1135,183 +1127,6 @@ Collections Department | ${store.state.auth.user ? store.state.auth.user.company
     if (addEl) addEl.textContent = additionalFormatted;
     if (unrecEl) unrecEl.textContent = unrecoveredFormatted;
     if (progBar) progBar.style.width = `${targetPercent}%`;
-    syncApplyStrategyButton();
-  }
-
-  function getSelectedRecoveryLevers() {
-    return Array.from(document.querySelectorAll('.sim-lever-checkbox:checked'))
-      .map(el => el.getAttribute('data-lever'))
-      .filter(Boolean);
-  }
-
-  function ensureQuarterlyActionPlanCard() {
-    const view = document.getElementById('view-simulator');
-    if (!view || document.getElementById('quarterly-action-plan-card')) return;
-    const article = document.createElement('article');
-    article.id = 'quarterly-action-plan-card';
-    article.className = 'action-plan-card';
-    article.innerHTML = '<div class="action-plan-header"><div><div class="action-plan-kicker">Current workspace</div><h3>Quarterly Action Plan</h3></div><span id="qap-status-badge" class="badge badge-paid" style="display:none;">ACTIVE</span></div><div id="qap-empty-state" class="action-plan-empty">No strategy has been applied yet. Adjust the recovery target and levers above, then click Apply Strategy to save a plan for this account.</div><div id="qap-active-state" style="display:none;"><div class="action-plan-metrics"><div class="action-plan-metric"><label>Recovery Target</label><strong id="qap-target">—</strong></div><div class="action-plan-metric"><label>Projected Recovery</label><strong id="qap-projected">—</strong></div><div class="action-plan-metric"><label>Current Recovery</label><strong id="qap-current">—</strong></div><div class="action-plan-metric"><label>Potential Additional</label><strong id="qap-additional">—</strong></div></div><div class="action-plan-levers-label">Selected Recovery Levers</div><ul id="qap-levers-list" class="action-plan-levers"></ul><div class="action-plan-meta"><span>Status: <strong id="qap-status">ACTIVE</strong></span><span>Applied: <strong id="qap-applied">—</strong></span></div></div>';
-    view.appendChild(article);
-  }
-
-  function hydrateSimulatorFromSavedPlan() {
-    const plan = store.getQuarterlyActionPlan();
-    if (!plan || !Number(plan.recoveryTarget)) return;
-    uiState.simulatorTargetRate = Number(plan.recoveryTarget);
-    const slider = document.getElementById('recovery-target-slider');
-    if (slider) slider.value = String(plan.recoveryTarget);
-    const wanted = new Set((plan.levers || []).map(String));
-    if (wanted.size) {
-      document.querySelectorAll('.sim-lever-checkbox').forEach(box => {
-        box.checked = wanted.has(box.getAttribute('data-lever') || '');
-      });
-    }
-  }
-
-  function updateAppliedSummary(plan) {
-    const summary = document.getElementById('sim-applied-summary');
-    if (!summary) return;
-    if (!plan) {
-      summary.style.display = 'none';
-      summary.textContent = '';
-      return;
-    }
-    const leverCount = Array.isArray(plan.levers) ? plan.levers.length : 0;
-    summary.style.display = 'block';
-    summary.textContent = `Strategy Applied Successfully — ${plan.recoveryTarget}% recovery target is ACTIVE in your Quarterly Action Plan (${leverCount} lever${leverCount === 1 ? '' : 's'}).`;
-  }
-
-  function isApplyStrategyButton(el) {
-    if (!el || el.tagName !== 'BUTTON') return false;
-    if (el.id === 'btn-apply-strategy') return true;
-    const label = (el.textContent || '').replace(/\s+/g, ' ').trim();
-    return label === 'Apply Strategy' || label === 'Strategy Applied' || label.indexOf('Apply Strategy') !== -1 || label.indexOf('Strategy Applied') !== -1;
-  }
-
-  function collectCurrentStrategyDraft() {
-    const metrics = store.getComputedMetrics();
-    const targetPercent = Number(uiState.simulatorTargetRate) || 85;
-    const totalOut = metrics.totalOutstandingRaw || 0;
-    const currentRate = Math.max(0, Math.min(100, metrics.recoveryRate || 0));
-    const projectedRecoveryRaw = totalOut * (targetPercent / 100);
-    const baselineRecoveryRaw = totalOut * (currentRate / 100);
-    const additionalRecoveryRaw = Math.max(0, projectedRecoveryRaw - baselineRecoveryRaw);
-    const unrecoveredRaw = Math.max(0, totalOut - projectedRecoveryRaw);
-    return {
-      recoveryTarget: targetPercent,
-      projectedRecoveryFormatted: `₹${(projectedRecoveryRaw / 100000).toFixed(1)}L`,
-      currentRecoveryFormatted: metrics.recoveredThisMonthFormatted,
-      additionalRecoveryFormatted: `+₹${(additionalRecoveryRaw / 100000).toFixed(1)}L`,
-      outstandingFormatted: metrics.totalOutstandingFormatted,
-      recoveryRateFormatted: `${currentRate.toFixed(0)}%`,
-      unrecoveredFormatted: `₹${(unrecoveredRaw / 100000).toFixed(1)}L`,
-      levers: getSelectedRecoveryLevers()
-    };
-  }
-
-  function formatAppliedAt(iso) {
-    if (!iso) return 'Today';
-    const applied = new Date(iso);
-    if (Number.isNaN(applied.getTime())) return 'Today';
-    const today = store.todayLocal();
-    if (applied.getFullYear() === today.getFullYear() && applied.getMonth() === today.getMonth() && applied.getDate() === today.getDate()) {
-      return 'Today';
-    }
-    return applied.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-  }
-
-  function renderQuarterlyActionPlan() {
-    const emptyEl = document.getElementById('qap-empty-state');
-    const activeEl = document.getElementById('qap-active-state');
-    const badgeEl = document.getElementById('qap-status-badge');
-    const plan = store.getQuarterlyActionPlan();
-
-    if (!plan) {
-      if (emptyEl) emptyEl.style.display = 'block';
-      if (activeEl) activeEl.style.display = 'none';
-      if (badgeEl) badgeEl.style.display = 'none';
-      updateAppliedSummary(null);
-      return;
-    }
-
-    if (emptyEl) emptyEl.style.display = 'none';
-    if (activeEl) activeEl.style.display = 'block';
-    if (badgeEl) badgeEl.style.display = 'inline-flex';
-
-    const setText = (id, value) => {
-      const el = document.getElementById(id);
-      if (el) el.textContent = value;
-    };
-    setText('qap-target', `${plan.recoveryTarget}%`);
-    setText('qap-projected', plan.projectedRecoveryFormatted || '—');
-    setText('qap-current', plan.currentRecoveryFormatted || '—');
-    setText('qap-additional', plan.additionalRecoveryFormatted || '—');
-    setText('qap-status', plan.status || 'ACTIVE');
-    setText('qap-applied', formatAppliedAt(plan.appliedAt));
-
-    const list = document.getElementById('qap-levers-list');
-    const levers = Array.isArray(plan.levers) ? plan.levers : [];
-    if (list) {
-      list.innerHTML = '';
-      if (levers.length === 0) {
-        const li = document.createElement('li');
-        li.textContent = 'No recovery levers selected.';
-        list.appendChild(li);
-      } else {
-        levers.forEach(label => {
-          const li = document.createElement('li');
-          li.textContent = label;
-          list.appendChild(li);
-        });
-      }
-    }
-    updateAppliedSummary(plan);
-  }
-
-  function syncApplyStrategyButton() {
-    const btn = document.getElementById('btn-apply-strategy');
-    if (!btn) return;
-    const saved = store.getQuarterlyActionPlan();
-    const draft = collectCurrentStrategyDraft();
-    const isActiveMatch = !!(saved && store.strategyFingerprint(saved) === store.strategyFingerprint(draft));
-    btn.classList.toggle('btn-apply-strategy-applied', isActiveMatch);
-    btn.textContent = isActiveMatch ? '✓ Strategy Applied' : 'Apply Strategy';
-  }
-
-  async function applySimulatorStrategy() {
-    window.recoApplyStrategy = applySimulatorStrategy;
-    if (applySimulatorStrategy._busy) return;
-    applySimulatorStrategy._busy = true;
-    const btn = document.getElementById('btn-apply-strategy') || Array.from(document.querySelectorAll('#view-simulator button')).find(isApplyStrategyButton);
-    if (btn) {
-      btn.id = 'btn-apply-strategy';
-      btn.removeAttribute('onclick');
-      btn.disabled = true;
-    }
-    try {
-      ensureQuarterlyActionPlanCard();
-      const draft = collectCurrentStrategyDraft();
-      const result = await store.applyQuarterlyStrategy(draft);
-      if (!result || !result.success) {
-        showToast((result && result.message) || 'Unable to save strategy. Please try again.', 'danger');
-        return;
-      }
-      if (result.alreadyActive) {
-        showToast('This strategy is already active.', 'warning');
-      } else {
-        showToast(`Strategy Applied Successfully. Your ${draft.recoveryTarget}% recovery strategy has been added to your Quarterly Action Plan.`);
-      }
-      renderQuarterlyActionPlan();
-      syncApplyStrategyButton();
-      const card = document.getElementById('quarterly-action-plan-card');
-      if (card) card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    } catch (err) {
-      console.warn('Apply strategy failed:', err);
-      showToast('Unable to save strategy. Please try again.', 'danger');
-    } finally {
-      if (btn) btn.disabled = false;
-      applySimulatorStrategy._busy = false;
-    }
   }
 
   /* ==========================================================================
@@ -1797,28 +1612,6 @@ Collections Department | ${store.state.auth.user ? store.state.auth.user.company
       });
     }
 
-    document.querySelectorAll('.sim-lever-checkbox').forEach(box => {
-      box.addEventListener('change', () => syncApplyStrategyButton());
-    });
-
-    const nativeAlert = window.alert.bind(window);
-    window.alert = function(message) {
-      if (String(message || '').includes('Simulation strategy blueprint saved')) {
-        applySimulatorStrategy();
-        return;
-      }
-      return nativeAlert(message);
-    };
-
-    document.addEventListener('click', (e) => {
-      const btn = e.target.closest('button');
-      if (!isApplyStrategyButton(btn)) return;
-      if (!btn.closest('#view-simulator') && btn.id !== 'btn-apply-strategy') return;
-      e.preventDefault();
-      e.stopImmediatePropagation();
-      applySimulatorStrategy();
-    }, true);
-
     // Export Reports
     const exportBtn = document.getElementById('btn-export-report');
     if (exportBtn) {
@@ -1887,7 +1680,6 @@ Collections Department | ${store.state.auth.user ? store.state.auth.user.company
             acc.customers = [];
             acc.invoices = [];
             acc.notifications = [];
-            acc.quarterlyActionPlan = null;
             store.saveCurrentAccount(acc);
           }
           showToast('Workspace reset.');
@@ -2102,8 +1894,6 @@ Collections Department | ${store.state.auth.user ? store.state.auth.user.company
     whyChip.setAttribute('data-prompt', `Why is ${top.name} considered high risk?`);
     whyChip.textContent = `🏢 Why is ${top.name.split(' ')[0]} high risk?`;
   }
-
-  window.recoApplyStrategy = applySimulatorStrategy;
 
   // Initial Boot
   setupEventListeners();

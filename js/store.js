@@ -3,17 +3,6 @@
    Multi-Tenant Account Data Isolation Architecture & Financial Engine
    ========================================================================== */
 
-(function interceptLegacyApplyAlert() {
-  var nativeAlert = window.alert.bind(window);
-  window.alert = function (message) {
-    if (String(message || '').indexOf('Simulation strategy blueprint') !== -1) {
-      if (typeof window.recoApplyStrategy === 'function') window.recoApplyStrategy();
-      return;
-    }
-    return nativeAlert.apply(window, arguments);
-  };
-})();
-
 class RecoStore {
   constructor() {
     this.REGISTRY_KEY = 'RECO_ACCOUNTS_REGISTRY_V2';
@@ -273,7 +262,6 @@ class RecoStore {
         autoNudge: true
       },
       baseHistoricalRecovered: 820000,
-      quarterlyActionPlan: null
     };
   }
 
@@ -427,7 +415,6 @@ class RecoStore {
         autoNudge: true
       },
       baseHistoricalRecovered: 0,
-      quarterlyActionPlan: null
     };
   }
 
@@ -497,7 +484,6 @@ class RecoStore {
           ...local,
           user: remote.user || local.user
         };
-        merged.quarterlyActionPlan = remote.quarterlyActionPlan || local.quarterlyActionPlan || null;
         this.saveAccountData(this.activeAccountId, merged, { persistRemote: remoteCount < localCount, silent: false });
       }
     } catch (e) {
@@ -1165,51 +1151,6 @@ class RecoStore {
     this.saveCurrentAccount(acc);
   }
 
-  getQuarterlyActionPlan() {
-    const acc = this.getCurrentAccount();
-    if (!acc || !acc.quarterlyActionPlan || typeof acc.quarterlyActionPlan !== 'object') return null;
-    return acc.quarterlyActionPlan;
-  }
-
-  strategyFingerprint(plan) {
-    if (!plan) return '';
-    const levers = Array.isArray(plan.levers) ? plan.levers.slice().map(l => String(l)).sort() : [];
-    return `${Number(plan.recoveryTarget) || 0}|${levers.join('|')}`;
-  }
-
-  async applyQuarterlyStrategy(plan) {
-    const acc = this.getCurrentAccount();
-    if (!acc || !this.activeAccountId || !plan) {
-      return { success: false, message: 'Unable to save strategy. Please try again.' };
-    }
-
-    const nextPlan = {
-      accountId: this.activeAccountId,
-      recoveryTarget: Number(plan.recoveryTarget),
-      projectedRecoveryFormatted: String(plan.projectedRecoveryFormatted || ''),
-      currentRecoveryFormatted: String(plan.currentRecoveryFormatted || ''),
-      additionalRecoveryFormatted: String(plan.additionalRecoveryFormatted || ''),
-      outstandingFormatted: String(plan.outstandingFormatted || ''),
-      recoveryRateFormatted: String(plan.recoveryRateFormatted || ''),
-      unrecoveredFormatted: String(plan.unrecoveredFormatted || ''),
-      levers: Array.isArray(plan.levers) ? plan.levers.slice() : [],
-      status: 'ACTIVE',
-      appliedAt: new Date().toISOString()
-    };
-
-    const existing = acc.quarterlyActionPlan;
-    if (existing && existing.status === 'ACTIVE' && this.strategyFingerprint(existing) === this.strategyFingerprint(nextPlan)) {
-      return { success: true, alreadyActive: true, plan: existing };
-    }
-
-    acc.quarterlyActionPlan = nextPlan;
-    const saved = this.saveCurrentAccount(acc);
-    if (!saved) {
-      return { success: false, message: 'Unable to save strategy. Please try again.' };
-    }
-    return { success: true, alreadyActive: false, plan: nextPlan };
-  }
-
   /* ==========================================================================
      Authentication & Multi-Account Switching (with Real Backend Email API)
      ========================================================================== */
@@ -1424,7 +1365,6 @@ class RecoStore {
         autoNudge: true
       },
       baseHistoricalRecovered: 0,
-      quarterlyActionPlan: null
     };
 
     this.saveAccountData(newAccountId, emptyAccountData, { persistRemote: false, silent: true });

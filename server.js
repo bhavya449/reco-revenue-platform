@@ -137,30 +137,6 @@ function emptyAccountPayload(user) {
       autoNudge: true
     },
     baseHistoricalRecovered: 0,
-    quarterlyActionPlan: null
-  };
-}
-
-function sanitizeQuarterlyActionPlan(plan, accountId) {
-  if (!plan || typeof plan !== 'object') return null;
-  const target = Number(plan.recoveryTarget);
-  const levers = Array.isArray(plan.levers)
-    ? plan.levers.map(l => String(l).trim()).filter(Boolean).slice(0, 12)
-    : [];
-  return {
-    accountId,
-    recoveryTarget: Number.isFinite(target) ? Math.max(50, Math.min(100, Math.round(target))) : 85,
-    projectedRecoveryFormatted: String(plan.projectedRecoveryFormatted || '').slice(0, 40),
-    currentRecoveryFormatted: String(plan.currentRecoveryFormatted || '').slice(0, 40),
-    additionalRecoveryFormatted: String(plan.additionalRecoveryFormatted || '').slice(0, 40),
-    outstandingFormatted: String(plan.outstandingFormatted || '').slice(0, 40),
-    recoveryRateFormatted: String(plan.recoveryRateFormatted || '').slice(0, 40),
-    unrecoveredFormatted: String(plan.unrecoveredFormatted || '').slice(0, 40),
-    levers,
-    status: 'ACTIVE',
-    appliedAt: plan.appliedAt && !Number.isNaN(Date.parse(plan.appliedAt))
-      ? plan.appliedAt
-      : new Date().toISOString()
   };
 }
 
@@ -194,7 +170,6 @@ function sanitizeAccountPayload(body, accountId, existingUser) {
       autoNudge: settings.autoNudge !== false
     },
     baseHistoricalRecovered: Number(src.baseHistoricalRecovered) || 0,
-    quarterlyActionPlan: sanitizeQuarterlyActionPlan(src.quarterlyActionPlan, accountId)
   };
 }
 
