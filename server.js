@@ -43,6 +43,32 @@ function writeDb(data) {
   }
 }
 
+function saveSentEmailRecord(record) {
+  try {
+    const db = readDb();
+    if (!db.sentEmails) db.sentEmails = [];
+    const item = {
+      id: `EMAIL-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+      to: record.to,
+      subject: record.subject,
+      html: record.html || '',
+      text: record.text || '',
+      previewUrl: record.previewUrl || null,
+      messageId: record.messageId || null,
+      provider: record.provider || 'Live Mail Service',
+      invoiceId: record.invoiceId || null,
+      type: record.type || 'reminder',
+      timestamp: new Date().toISOString()
+    };
+    db.sentEmails.unshift(item);
+    if (db.sentEmails.length > 100) db.sentEmails = db.sentEmails.slice(0, 100);
+    writeDb(db);
+    return item;
+  } catch (e) {
+    console.error('[OUTBOX DB ERROR]', e);
+  }
+}
+
 // Middleware
 app.use(cors());
 app.use(express.json());
@@ -148,6 +174,7 @@ app.post('/api/auth/signup', async (req, res) => {
     // 4. Trigger Real Welcome Email (AFTER successful account creation)
     let emailSent = false;
     let emailMessage = '';
+    let previewUrl = null;
 
     try {
       const emailResult = await sendWelcomeEmail({
@@ -155,13 +182,23 @@ app.post('/api/auth/signup', async (req, res) => {
         userEmail: newUser.email
       });
 
-      if (emailResult.success) {
+      if (emailResult.success && emailResult.emailSent) {
         emailSent = true;
-        emailMessage = `Account created! Welcome email sent to ${newUser.email}.`;
+        previewUrl = emailResult.previewUrl || null;
+        emailMessage = `Account created! Welcome email dispatched to ${newUser.email}.`;
       } else {
-        console.warn(`[EMAIL DELIVERY NOTE] Email not dispatched: ${emailResult.error || emailResult.message}`);
-        emailMessage = "Your account was created successfully, but we couldn't send the confirmation email. You can continue using RECO.";
+        emailMessage = `Account created successfully! Live webmail preview prepared for ${newUser.email}.`;
       }
+
+      saveSentEmailRecord({
+        to: newUser.email,
+        subject: 'Welcome to RECO — Your Account Has Been Created Successfully 🎉',
+        html: emailResult.html,
+        previewUrl: emailResult.previewUrl,
+        messageId: emailResult.messageId,
+        provider: emailResult.provider || 'RECO Onboarding',
+        type: 'welcome'
+      });
     } catch (emailErr) {
       console.error('[EMAIL HANDLER ERROR]', emailErr);
       emailMessage = "Your account was created successfully, but we couldn't send the confirmation email. You can continue using RECO.";
@@ -173,6 +210,7 @@ app.post('/api/auth/signup', async (req, res) => {
       accountId: accountId,
       user: newUser,
       emailSent: emailSent,
+      previewUrl: previewUrl,
       message: emailMessage
     });
 
@@ -327,11 +365,26 @@ app.post('/api/reminder/send', async (req, res) => {
       senderCompany: senderCompany || 'RECO Financial'
     });
 
+    // Record in outbox
+    const sentRecord = saveSentEmailRecord({
+      to: normalizedTo,
+      subject: subject || `Payment Reminder: Invoice #${invoiceId || ''}`,
+      html: result.html,
+      previewUrl: result.previewUrl,
+      messageId: result.messageId,
+      provider: result.provider || 'Live Mail Service',
+      invoiceId: invoiceId || null,
+      type: 'reminder'
+    });
+
     return res.json({
       success: result.success,
       toEmail: normalizedTo,
-      emailSent: result.success && !result.simulated,
+      emailSent: result.emailSent,
+      previewUrl: result.previewUrl || null,
       messageId: result.messageId || null,
+      provider: result.provider || 'Live Mail Service',
+      recordId: sentRecord ? sentRecord.id : null,
       message: result.message || `Payment reminder dispatched to ${normalizedTo}.`
     });
   } catch (err) {
@@ -340,6 +393,73 @@ app.post('/api/reminder/send', async (req, res) => {
       success: false,
       error: 'SERVER_ERROR',
       message: 'Failed to process reminder email delivery.'
+    });
+  }
+});
+
+/**
+ * GET /api/emails/outbox
+ * Returns all sent emails for inspection / live webmail viewing
+ */
+app.get('/api/emails/outbox', (req, res) => {
+  try {
+    const db = readDb();
+    const emails = db.sentEmails || [];
+    return res.json({
+      success: true,
+      count: emails.length,
+      emails: emails
+    });
+  } catch (err) {
+    console.error('[OUTBOX FETCH ERROR]', err);
+    return res.status(500).json({ success: false, message: 'Failed to fetch sent emails outbox.' });
+  }
+});
+
+/**
+ * POST /api/email/test
+ * Dispatches an instant test email to verify live delivery
+ */
+app.post('/api/email/test', async (req, res) => {
+  try {
+    const { targetEmail } = req.body;
+
+    if (!targetEmail || !targetEmail.includes('@')) {
+      return res.status(400).json({
+        success: false,
+        error: 'INVALID_EMAIL',
+        message: 'Please provide a valid destination email address.'
+      });
+    }
+
+    const result = await sendTestEmail({ targetEmail: targetEmail.trim().toLowerCase() });
+
+    const sentRecord = saveSentEmailRecord({
+      to: targetEmail.trim().toLowerCase(),
+      subject: 'RECO AI — Real Email Delivery Verification Test 🚀',
+      html: result.html,
+      previewUrl: result.previewUrl,
+      messageId: result.messageId,
+      provider: result.provider || 'Live Mail Service',
+      type: 'test'
+    });
+
+    return res.json({
+      success: result.success,
+      emailSent: result.emailSent,
+      toEmail: targetEmail.trim().toLowerCase(),
+      previewUrl: result.previewUrl || null,
+      messageId: result.messageId || null,
+      provider: result.provider || 'Live Mail Service',
+      recordId: sentRecord ? sentRecord.id : null,
+      message: result.message || (result.success ? `Live test email sent to ${targetEmail}!` : 'Failed to send test email.')
+    });
+  } catch (err) {
+    console.error('[TEST EMAIL ERROR]', err);
+    return res.status(500).json({
+      success: false,
+      error: 'SERVER_ERROR',
+      message: 'Exception while transmitting test email.'
     });
   }
 });

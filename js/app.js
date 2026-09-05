@@ -1382,9 +1382,9 @@ Collections Department | ${store.state.auth.user ? store.state.auth.user.company
   }
 
   /* ==========================================================================
-     9. Toast Notification System
+     9. Toast Notification System & Live Sent Mailbox
      ========================================================================== */
-  function showToast(message, type = 'success') {
+  function showToast(message, type = 'success', isHtml = false) {
     const container = document.getElementById('toast-container');
     if (!container) return;
 
@@ -1394,16 +1394,114 @@ Collections Department | ${store.state.auth.user ? store.state.auth.user.company
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
       </svg>
-      <span>${escapeHtml(message)}</span>
+      <span>${isHtml ? message : escapeHtml(message)}</span>
     `;
 
     container.appendChild(toast);
+    const duration = isHtml ? 5000 : 3200;
     setTimeout(() => {
       toast.style.opacity = '0';
       toast.style.transform = 'translateX(100%)';
       toast.style.transition = 'all 0.3s ease-out';
       setTimeout(() => toast.remove(), 300);
-    }, 3200);
+    }, duration);
+  }
+
+  async function loadSentMailbox() {
+    const listContainer = document.getElementById('mailbox-list-container');
+    if (!listContainer) return;
+
+    listContainer.innerHTML = `
+      <div style="text-align: center; padding: 30px; color: var(--slate-gray);">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation: spin 1s linear infinite;"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+        <div style="margin-top: 8px;">Retrieving dispatched emails...</div>
+      </div>
+    `;
+
+    try {
+      const res = await fetch('/api/emails/outbox');
+      const data = await res.json();
+      const emails = data.emails || [];
+
+      if (emails.length === 0) {
+        listContainer.innerHTML = `
+          <div style="text-align: center; padding: 40px 20px; color: var(--slate-gray);">
+            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin-bottom: 8px; color: var(--tan);"><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/><rect width="20" height="16" x="2" y="4" rx="2"/></svg>
+            <div style="font-weight: 700; color: var(--space-cadet); margin-bottom: 4px;">Outbox is Empty</div>
+            <div style="font-size: 0.85rem;">Send a payment reminder or test email to see dispatched mail logs here.</div>
+          </div>
+        `;
+        return;
+      }
+
+      listContainer.innerHTML = emails.map((m, idx) => {
+        const timeFormatted = new Date(m.timestamp).toLocaleString('en-IN', {
+          month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+        });
+        const hasPreview = !!m.previewUrl;
+
+        return `
+          <div style="border: 1px solid var(--border-light); border-radius: 10px; background: #FFFFFF; overflow: hidden; box-shadow: 0 2px 6px rgba(0,0,0,0.03);">
+            <div style="padding: 14px 16px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; background: #FAF8F5; border-bottom: 1px solid var(--border-light);">
+              <div>
+                <div style="font-size: 0.82rem; font-weight: 700; color: var(--space-cadet);">
+                  To: <span style="font-family: monospace; color: var(--space-cadet); font-weight: 800;">${escapeHtml(m.to)}</span>
+                </div>
+                <div style="font-size: 0.88rem; font-weight: 700; color: var(--space-cadet); margin-top: 2px;">
+                  ${escapeHtml(m.subject)}
+                </div>
+              </div>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span class="badge badge-tan" style="font-size: 0.72rem;">${escapeHtml(m.provider || 'Live Mail')}</span>
+                <span style="font-size: 0.75rem; color: var(--slate-gray);">${timeFormatted}</span>
+              </div>
+            </div>
+
+            <div style="padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap;">
+              <div style="font-size: 0.78rem; color: var(--slate-gray);">
+                ${m.invoiceId ? `Invoice Reference: <strong>#${escapeHtml(m.invoiceId)}</strong>` : 'System Notification'}
+              </div>
+              <div style="display: flex; gap: 8px; margin-left: auto;">
+                <button class="btn btn-sm btn-ghost btn-toggle-email-preview" data-idx="${idx}" style="font-size: 0.78rem;">
+                  Preview HTML
+                </button>
+                ${hasPreview ? `
+                  <a href="${m.previewUrl}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-primary" style="font-size: 0.78rem; padding: 5px 12px; display: inline-flex; align-items: center; gap: 4px;">
+                    Open Live Webmail ↗
+                  </a>
+                ` : ''}
+              </div>
+            </div>
+
+            <div id="email-preview-body-${idx}" style="display: none; padding: 16px; border-top: 1px dashed var(--border-light); background: #FAF8F5;">
+              <div style="border: 1px solid var(--border-light); border-radius: 8px; max-height: 320px; overflow-y: auto; background: #FFFFFF; padding: 12px;">
+                ${m.html || `<pre style="font-size: 0.8rem; white-space: pre-wrap;">${escapeHtml(m.text || '')}</pre>`}
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      // Wire preview toggles
+      listContainer.querySelectorAll('.btn-toggle-email-preview').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const idx = btn.getAttribute('data-idx');
+          const bodyEl = document.getElementById(`email-preview-body-${idx}`);
+          if (bodyEl) {
+            const isHidden = bodyEl.style.display === 'none';
+            bodyEl.style.display = isHidden ? 'block' : 'none';
+            btn.textContent = isHidden ? 'Hide HTML' : 'Preview HTML';
+          }
+        });
+      });
+
+    } catch (err) {
+      listContainer.innerHTML = `
+        <div style="color: var(--caput-mortuum); padding: 20px; text-align: center;">
+          Failed to load sent emails.
+        </div>
+      `;
+    }
   }
 
   /* ==========================================================================
@@ -1765,7 +1863,11 @@ Collections Department | ${store.state.auth.user ? store.state.auth.user.company
           }
 
           if (data.success && data.emailSent) {
-            showToast(`✅ Payment reminder delivered directly to ${toEmail}!`);
+            if (data.previewUrl) {
+              showToast(`✅ Payment reminder dispatched to ${toEmail}! <a href="${data.previewUrl}" target="_blank" rel="noopener noreferrer" style="color: #D5B893; text-decoration: underline; font-weight: 700; margin-left: 6px;">Inspect Live Email ↗</a>`, 'success', true);
+            } else {
+              showToast(`✅ Payment reminder delivered directly to ${toEmail}!`);
+            }
           } else {
             showToast(`⚠️ Reminder prepared for ${toEmail}. Add your Resend API Key in Settings to deliver to real inboxes.`);
           }
@@ -1927,7 +2029,11 @@ Collections Department | ${store.state.auth.user ? store.state.auth.user.company
           const data = await res.json();
 
           if (data.success && data.emailSent) {
-            showToast(`✅ Test email delivered directly to ${targetEmail}! Check your inbox.`);
+            if (data.previewUrl) {
+              showToast(`✅ Live verification email delivered to ${targetEmail}! <a href="${data.previewUrl}" target="_blank" rel="noopener noreferrer" style="color: #D5B893; text-decoration: underline; font-weight: 700; margin-left: 6px;">Inspect Delivered Email ↗</a>`, 'success', true);
+            } else {
+              showToast(`✅ Test email delivered directly to ${targetEmail}! Check your inbox.`);
+            }
           } else if (data.success && !data.emailSent) {
             showToast(`⚠️ Test prepared for ${targetEmail}. Enter a valid Resend API Key above to send real emails.`);
           } else {
@@ -1940,6 +2046,22 @@ Collections Department | ${store.state.auth.user ? store.state.auth.user.company
           testEmailBtn.disabled = false;
           testEmailBtn.innerHTML = originalBtnHtml;
         }
+      });
+    }
+
+    // Sent Mailbox / Outbox Modal Listeners
+    const headerMailboxBtn = document.getElementById('header-mailbox-btn');
+    const mailboxModal = document.getElementById('mailbox-modal-backdrop');
+    const closeMailboxBtn = document.getElementById('btn-close-mailbox');
+    if (headerMailboxBtn && mailboxModal) {
+      headerMailboxBtn.addEventListener('click', () => {
+        loadSentMailbox();
+        mailboxModal.classList.add('active');
+      });
+    }
+    if (closeMailboxBtn && mailboxModal) {
+      closeMailboxBtn.addEventListener('click', () => {
+        mailboxModal.classList.remove('active');
       });
     }
 
