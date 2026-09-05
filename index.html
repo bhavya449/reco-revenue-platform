@@ -140,9 +140,9 @@
           <div class="feature-icon-box">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
           </div>
-          <h3>AI Communication</h3>
+          <h3>AI Copilot Intelligence</h3>
           <p>
-            Generate personalized, context-aware payment reminders instantly across multiple persuasive tones.
+            Engage with a conversational intelligence assistant to evaluate debtor behavior, overdue exposure, and collection strategies.
           </p>
         </div>
       </div>
@@ -646,32 +646,34 @@
         </section>
 
         <!-- ====================================================================
-             6. AI REVENUE COPILOT VIEW
+             6. AI REVENUE COPILOT
              ==================================================================== -->
         <section id="view-copilot" class="app-view">
           <div style="margin-bottom: 22px;">
             <h2 style="font-size: 1.6rem; font-family: var(--font-display);">Your AI Revenue Copilot</h2>
-            <p style="color: var(--slate-gray); font-size: 0.92rem;">Ask questions about your outstanding revenue and generate precision payment communications.</p>
+            <p style="color: var(--slate-gray); font-size: 0.92rem;">Ask questions about your accounts ledger, debtor risks, delayed invoices, and revenue recovery strategy.</p>
           </div>
 
           <div class="copilot-layout-grid">
-            <!-- Left: Chatbot Interface -->
+            <!-- Full Width AI Chatbot Interface -->
             <div class="copilot-chat-container">
               <div class="copilot-chat-header">
                 <div style="display: flex; align-items: center; gap: 10px;">
-                  <div class="reco-logo-mark" style="width: 30px; height: 30px; font-size: 0.85rem;">R</div>
+                  <div class="reco-logo-mark" style="width: 32px; height: 32px; font-size: 0.9rem;">R</div>
                   <div>
-                    <strong style="font-size: 0.95rem;">RECO Intelligence Engine</strong>
-                    <div style="font-size: 0.72rem; color: var(--tan);">Connected to Financial Ledger</div>
+                    <strong style="font-size: 1rem;">RECO Intelligence Engine</strong>
+                    <div style="font-size: 0.75rem; color: var(--tan);">Connected to Active Financial Ledger & Risk Models</div>
                   </div>
                 </div>
-                <span class="badge badge-tan">Online</span>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <span class="badge badge-tan">AI Model Online</span>
+                </div>
               </div>
 
               <div id="copilot-chat-messages" class="copilot-chat-messages">
                 <div class="chat-bubble ai">
                   Hello <span class="user-name-display">Vikram</span> 👋 I'm your RECO Revenue Copilot. I've continuously audited your accounts book and analyzed high-risk invoices requiring attention.<br><br>
-                  How would you like to proceed? You can click a quick question below or ask anything.
+                  How would you like to proceed? You can click a quick question below or ask anything about cash flow, specific debtors, or overdue invoices.
                 </div>
               </div>
 
@@ -689,85 +691,17 @@
                 <button class="prompt-chip" data-prompt="Which customers have the worst payment behavior?">
                   📊 Payment delay behavior?
                 </button>
+                <button class="prompt-chip" data-prompt="Give me a full executive cashflow audit.">
+                  📈 Executive cashflow audit
+                </button>
               </div>
 
               <form id="copilot-chat-form" class="copilot-chat-input-bar">
-                <input type="text" id="copilot-chat-input" class="form-control" placeholder="Ask RECO about collections, risk scores, or payment delays..." required>
+                <input type="text" id="copilot-chat-input" class="form-control" placeholder="Ask RECO about collections, debtor behavior, cashflow, or risk scores..." required>
                 <button type="submit" class="btn btn-primary btn-icon" title="Send Message">
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
                 </button>
               </form>
-            </div>
-
-            <!-- Right: AI Payment Reminder Generator -->
-            <div class="copilot-tools-panel">
-              <div class="reminder-generator-card">
-                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
-                  <h3 style="font-size: 1.15rem; font-weight: 700; color: var(--space-cadet);">Generate Payment Reminder</h3>
-                  <span class="badge badge-tan">AI Generated</span>
-                </div>
-
-                <!-- Select Target Invoice -->
-                <div class="form-group" style="margin-bottom: 12px;">
-                  <label class="form-label">Target Invoice:</label>
-                  <select id="copilot-invoice-select" class="form-control" style="font-size: 0.85rem;"></select>
-                </div>
-
-                <!-- Tone Selector -->
-                <div class="form-label" style="margin-bottom: 4px;">Select Reminder Tone:</div>
-                <div class="tone-selector-pills">
-                  <button class="tone-pill-btn active" data-tone="formal">Formal</button>
-                  <button class="tone-pill-btn" data-tone="friendly">Friendly</button>
-                  <button class="tone-pill-btn" data-tone="urgent">Urgent</button>
-                  <button class="tone-pill-btn" data-tone="firm">Firm</button>
-                </div>
-
-                <!-- Recipient Email (To) -->
-                <div class="form-group" style="margin-bottom: 14px;">
-                  <label class="form-label" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-                    <span style="font-weight: 700;">Recipient Email (To):</span>
-                    <span id="reminder-recipient-hint" class="badge" style="font-size: 0.73rem; background: rgba(97, 120, 145, 0.1); color: var(--slate-gray); font-weight: 600; padding: 2px 8px; border-radius: 4px;">Customer AP</span>
-                  </label>
-                  <div style="position: relative;">
-                    <input type="email" id="reminder-recipient-email" class="form-control" placeholder="finance@customer.com" style="font-size: 0.85rem; padding-left: 34px;" required>
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--slate-gray); pointer-events: none;"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
-                  </div>
-                  <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 6px; flex-wrap: wrap; gap: 6px;">
-                    <button type="button" id="btn-use-my-email" class="btn btn-xs" style="background: rgba(213, 184, 147, 0.15); border: 1px solid var(--tan); color: var(--space-cadet); font-size: 0.74rem; font-weight: 600; padding: 4px 9px; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 5px;">
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                      <span>Send to My Email (<strong id="my-account-email-label">your account email</strong>)</span>
-                    </button>
-                    <button type="button" id="btn-reset-recipient-email" class="btn btn-xs btn-ghost" style="font-size: 0.72rem; color: var(--slate-gray); background: transparent; border: none; cursor: pointer; text-decoration: underline;">
-                      Reset to Customer Email
-                    </button>
-                  </div>
-                </div>
-
-                <div class="form-group">
-                  <label class="form-label">Subject:</label>
-                  <input type="text" id="reminder-subject-input" class="form-control" style="font-size: 0.85rem;">
-                </div>
-
-                <div class="form-group">
-                  <label class="form-label">Message Draft:</label>
-                  <textarea id="reminder-body-preview" class="form-control" rows="8" style="font-size: 0.85rem; line-height: 1.5;"></textarea>
-                </div>
-
-                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                  <button id="btn-regen-reminder" class="btn btn-sm btn-secondary">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
-                    Regenerate
-                  </button>
-                  <button id="btn-copy-reminder" class="btn btn-sm btn-secondary">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
-                    Copy
-                  </button>
-                  <button id="btn-send-reminder" class="btn btn-sm btn-primary" style="margin-left: auto;">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
-                    Send to Client
-                  </button>
-                </div>
-              </div>
             </div>
           </div>
         </section>
@@ -1260,7 +1194,7 @@
         </div>
         <div style="display: flex; gap: 8px;">
           <button id="btn-modal-close-customer" class="btn btn-secondary">Close</button>
-          <button id="btn-modal-draft-reminder" class="btn btn-primary">Draft Reminder →</button>
+          <button id="btn-modal-draft-reminder" class="btn btn-primary">Ask AI Copilot →</button>
         </div>
       </div>
     </div>

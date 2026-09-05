@@ -171,8 +171,8 @@ document.addEventListener('DOMContentLoaded', () => {
     } else if (viewName === 'simulator') {
       updateRecoverySimulator(metrics);
     } else if (viewName === 'copilot') {
-      populateCopilotInvoiceSelector(metrics.invoices);
-      updateReminderComposer(uiState.selectedInvoiceId, uiState.currentTone);
+      const chatInput = document.getElementById('copilot-chat-input');
+      if (chatInput) chatInput.focus();
     } else if (viewName === 'settings') {
       populateSettingsForm();
     }
@@ -188,10 +188,6 @@ document.addEventListener('DOMContentLoaded', () => {
     else if (uiState.currentView === 'reports') renderReportsCharts(metrics);
     else if (uiState.currentView === 'notifications') renderNotificationList();
     else if (uiState.currentView === 'simulator') updateRecoverySimulator(metrics);
-    else if (uiState.currentView === 'copilot') {
-      populateCopilotInvoiceSelector(metrics.invoices);
-      updateReminderComposer(uiState.selectedInvoiceId, uiState.currentTone);
-    }
   });
 
   /* ==========================================================================
@@ -544,7 +540,7 @@ document.addEventListener('DOMContentLoaded', () => {
         <td>
           <div style="display:flex; gap:6px; align-items:center;">
             <button class="btn btn-sm btn-secondary view-inv-btn" data-id="${inv.id}">View</button>
-            <button class="btn btn-sm btn-tan remind-inv-btn" data-id="${inv.id}">Remind</button>
+            <button class="btn btn-sm btn-tan remind-inv-btn" data-id="${inv.id}" title="Consult AI Copilot">Ask Copilot</button>
             ${inv.status !== 'Paid' ? `
               <button class="btn btn-sm btn-ghost mark-paid-btn" data-id="${inv.id}" title="Mark as Paid">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
@@ -909,175 +905,8 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   /* ==========================================================================
-     7. AI Copilot Chat & Payment Reminder Generator (Data Isolated)
+     7. AI Revenue Copilot Conversational Assistant
      ========================================================================== */
-  function populateCopilotInvoiceSelector(invoices) {
-    const selectEl = document.getElementById('copilot-invoice-select');
-    if (!selectEl) return;
-
-    selectEl.innerHTML = '';
-    
-    if (!invoices || invoices.length === 0) {
-      const opt = document.createElement('option');
-      opt.value = "";
-      opt.textContent = "(No active invoices in account)";
-      selectEl.appendChild(opt);
-      uiState.selectedInvoiceId = null;
-      return;
-    }
-
-    invoices.forEach(inv => {
-      const opt = document.createElement('option');
-      opt.value = inv.id;
-      opt.textContent = `${inv.id} — ${inv.customer} (₹${inv.amount.toLocaleString('en-IN')})`;
-      if (inv.id === uiState.selectedInvoiceId) opt.selected = true;
-      selectEl.appendChild(opt);
-    });
-
-    if (!uiState.selectedInvoiceId && invoices.length > 0) {
-      uiState.selectedInvoiceId = invoices[0].id;
-    }
-
-    selectEl.addEventListener('change', (e) => {
-      uiState.selectedInvoiceId = e.target.value;
-      const currentUser = store.state.auth.user;
-      const isPersonalTest = currentUser && uiState.customRecipientEmail === currentUser.email;
-      updateReminderComposer(uiState.selectedInvoiceId, uiState.currentTone, !isPersonalTest);
-    });
-  }
-
-  function updateReminderRecipientField(inv, forceReset = false) {
-    const recipientInput = document.getElementById('reminder-recipient-email');
-    const recipientHint = document.getElementById('reminder-recipient-hint');
-    const myEmailLabel = document.getElementById('my-account-email-label');
-    const currentUser = store.state.auth.user;
-    const userEmail = currentUser ? currentUser.email : '';
-
-    if (myEmailLabel && userEmail) {
-      myEmailLabel.textContent = userEmail;
-    }
-
-    if (!inv) {
-      if (recipientInput) recipientInput.value = "";
-      if (recipientHint) recipientHint.innerHTML = `<span style="color: var(--slate-gray);">No invoice selected</span>`;
-      return;
-    }
-
-    const metrics = store.getComputedMetrics();
-    const cust = (metrics.customers || []).find(c => c.id === inv.customerId || c.name === inv.customer);
-    const safeName = (inv.customer || 'client').toLowerCase().replace(/[^a-z0-9]/g, '');
-    const defaultCustEmail = (cust && cust.email) ? cust.email : `finance@${safeName}.com`;
-
-    if (forceReset) {
-      uiState.customRecipientEmail = null;
-      if (recipientInput) recipientInput.value = defaultCustEmail;
-    } else if (uiState.customRecipientEmail !== null && uiState.customRecipientEmail !== undefined) {
-      if (recipientInput && recipientInput.value !== uiState.customRecipientEmail) {
-        recipientInput.value = uiState.customRecipientEmail;
-      }
-    } else {
-      if (recipientInput && !recipientInput.value) {
-        recipientInput.value = defaultCustEmail;
-      }
-    }
-
-    // Dynamic Hint Badge Calculation
-    const currentVal = (recipientInput ? recipientInput.value.trim() : '').toLowerCase();
-    if (recipientHint) {
-      if (userEmail && currentVal === userEmail.toLowerCase()) {
-        recipientHint.innerHTML = `<span style="color: #2e7d32; font-weight: 700;">👤 Test Recipient (Your Account)</span>`;
-      } else if (currentVal === defaultCustEmail.toLowerCase() || (cust && cust.email && currentVal === cust.email.toLowerCase())) {
-        recipientHint.innerHTML = `<span style="color: var(--slate-gray); font-weight: 600;">🏢 Customer AP (${escapeHtml(cust ? cust.name : inv.customer)})</span>`;
-      } else if (currentVal) {
-        recipientHint.innerHTML = `<span style="color: var(--tan); font-weight: 600;">✉️ Custom Recipient</span>`;
-      } else {
-        recipientHint.innerHTML = `<span style="color: var(--slate-gray);">Customer AP (${escapeHtml(inv.customer)})</span>`;
-      }
-    }
-  }
-
-  function updateReminderComposer(invoiceId, tone, resetRecipient = false) {
-    const metrics = store.getComputedMetrics();
-    const recipientInput = document.getElementById('reminder-recipient-email');
-    const recipientHint = document.getElementById('reminder-recipient-hint');
-    const subjectInput = document.getElementById('reminder-subject-input');
-    const bodyInput = document.getElementById('reminder-body-preview');
-
-    if (!metrics.invoices || metrics.invoices.length === 0) {
-      if (recipientInput) recipientInput.value = "";
-      if (recipientHint) recipientHint.innerHTML = `<span style="color: var(--slate-gray);">No customer invoice selected</span>`;
-      if (subjectInput) subjectInput.value = "No active invoices";
-      if (bodyInput) bodyInput.value = "Please add an invoice to this account using the '+ Add Invoice' button to generate customized AI payment reminders.";
-      return;
-    }
-
-    const inv = metrics.invoices.find(i => i.id === invoiceId) || metrics.invoices[0];
-    if (!inv) return;
-
-    uiState.selectedInvoiceId = inv.id;
-
-    // Safely update recipient input without wiping out user's custom test email
-    updateReminderRecipientField(inv, resetRecipient);
-
-    // Build Templates Deterministically for this invoice
-    const templates = {
-      formal: {
-        subject: `Formal Notice: Outstanding Payment for Invoice #${inv.id} — ${inv.customer}`,
-        body: `Dear ${inv.customer} Finance Team,
-
-This is a formal communication from RECO Accounts Department regarding outstanding Invoice #${inv.id} in the amount of ₹${inv.amount.toLocaleString('en-IN')}, which reached maturity on ${formatDate(inv.dueDate)} (${inv.daysOverdue > 0 ? `${inv.daysOverdue} days overdue` : 'due soon'}).
-
-We request you to expedite the remittance to ensure no disruption to our ongoing commercial engagements. Please find our banking coordinates attached.
-
-Kindly share the transaction reference number (UTR) upon transfer.
-
-Sincerely,
-Revenue Recovery Operations | ${store.state.auth.user ? store.state.auth.user.company : 'RECO'}`
-      },
-      friendly: {
-        subject: `Friendly Reminder: Payment for Invoice #${inv.id} — ${inv.customer}`,
-        body: `Hi ${inv.customer} Team,
-
-Hope you're having a productive week!
-
-This is a gentle reminder regarding Invoice #${inv.id} for ₹${inv.amount.toLocaleString('en-IN')}, due on ${formatDate(inv.dueDate)}.
-
-We understand things get busy. Could you kindly check the status and let us know when we might expect the payment? If you need another copy of the invoice, feel free to reply.
-
-Warm regards,
-Finance Team | ${store.state.auth.user ? store.state.auth.user.company : 'RECO'}`
-      },
-      urgent: {
-        subject: `URGENT: Overdue Payment Notice (${inv.daysOverdue} Days) — Invoice #${inv.id}`,
-        body: `ATTENTION: Finance Director / Accounts Payable,
-
-Invoice #${inv.id} for ₹${inv.amount.toLocaleString('en-IN')} is now ${inv.daysOverdue > 0 ? `${inv.daysOverdue} DAYS OVERDUE` : 'IMMEDIATELY DUE'} (Due date: ${formatDate(inv.dueDate)}).
-
-Despite previous notifications, we have not received confirmation of settlement. Please arrange immediate electronic wire transfer within 48 business hours to avoid automatic account freeze or late charges.
-
-Immediate remittance is required.
-
-Finance & Credit Control | ${store.state.auth.user ? store.state.auth.user.company : 'RECO'}`
-      },
-      firm: {
-        subject: `Account Notice: Overdue Settlement Required for Invoice #${inv.id}`,
-        body: `Dear ${inv.customer} Management,
-
-Our records indicate that Invoice #${inv.id} amounting to ₹${inv.amount.toLocaleString('en-IN')} remains unpaid past the agreed credit terms.
-
-To maintain a healthy commercial standing and credit eligibility, please facilitate the payment today.
-
-Please forward the payment acknowledgement to billing@reco-platform.io.
-
-Regards,
-Collections Department | ${store.state.auth.user ? store.state.auth.user.company : 'RECO'}`
-      }
-    };
-
-    const template = templates[tone] || templates.formal;
-    if (subjectInput) subjectInput.value = template.subject;
-    if (bodyInput) bodyInput.value = template.body;
-  }
 
   function sendChatMessage(text) {
     const messagesContainer = document.getElementById('copilot-chat-messages');
@@ -1161,7 +990,7 @@ Collections Department | ${store.state.auth.user ? store.state.auth.user.company
         }
 
       } else {
-        aiResponseText = `I evaluated your question against **${metrics.totalInvoicesCount} invoices** in your account ledger.\n\n* Total Outstanding: **${metrics.totalOutstandingFormatted}**\n* At Risk: **${metrics.atRiskFormatted}**\n* Recovered this month: **${metrics.recoveredThisMonthFormatted}**\n\nWould you like me to draft a reminder for a specific invoice in your ledger?`;
+        aiResponseText = `I evaluated your question against **${metrics.totalInvoicesCount} invoices** in your account ledger.\n\n* Total Outstanding: **${metrics.totalOutstandingFormatted}**\n* At Risk: **${metrics.atRiskFormatted}**\n* Recovered this month: **${metrics.recoveredThisMonthFormatted}**\n\nAsk me about overdue debtor risks, cashflow recovery opportunities, or specific customer behavioral trends!`;
       }
 
       typingIndicator.innerHTML = formatMarkdownText(aiResponseText);
@@ -1375,7 +1204,13 @@ Collections Department | ${store.state.auth.user ? store.state.auth.user.company
   function openReminderForInvoice(invoiceId) {
     uiState.selectedInvoiceId = invoiceId;
     window.location.hash = '#copilot';
-    updateReminderComposer(invoiceId, uiState.currentTone);
+    const metrics = store.getComputedMetrics();
+    const inv = (metrics.invoices || []).find(i => i.id === invoiceId);
+    if (inv) {
+      setTimeout(() => {
+        sendChatMessage(`Analyze payment risk and recovery strategy for Invoice #${inv.id} (${inv.customer}, ₹${inv.amount.toLocaleString('en-IN')}).`);
+      }, 350);
+    }
   }
 
   async function populateSettingsForm() {
@@ -1705,13 +1540,12 @@ Collections Department | ${store.state.auth.user ? store.state.auth.user.company
         const metrics = store.getComputedMetrics();
         const cust = metrics.customers.find(c => c.id === custId);
         closeCustomerModal();
-        if (cust) {
-          const custInvoices = metrics.invoices.filter(i => i.customerId === cust.id || (i.customer && i.customer.toLowerCase() === cust.name.toLowerCase()));
-          if (custInvoices.length > 0) {
-            uiState.selectedInvoiceId = custInvoices[0].id;
-          }
-        }
         window.location.hash = '#copilot';
+        if (cust) {
+          setTimeout(() => {
+            sendChatMessage(`Analyze payment risk and cashflow recovery outlook for customer ${cust.name}.`);
+          }, 350);
+        }
       });
     }
 
@@ -1832,155 +1666,6 @@ Collections Department | ${store.state.auth.user ? store.state.auth.user.company
         sendChatMessage(prompt);
       });
     });
-
-    // Tone Buttons in Reminder Composer
-    document.querySelectorAll('.tone-pill-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        document.querySelectorAll('.tone-pill-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        uiState.currentTone = btn.getAttribute('data-tone');
-        updateReminderComposer(uiState.selectedInvoiceId, uiState.currentTone, false);
-      });
-    });
-
-    // Recipient Email Real-time Editing & Helpers
-    const reminderRecipientInput = document.getElementById('reminder-recipient-email');
-    if (reminderRecipientInput) {
-      reminderRecipientInput.addEventListener('input', (e) => {
-        uiState.customRecipientEmail = e.target.value.trim();
-        const metrics = store.getComputedMetrics();
-        const inv = (metrics.invoices || []).find(i => i.id === uiState.selectedInvoiceId);
-        updateReminderRecipientField(inv, false);
-      });
-    }
-
-    const useMyEmailBtn = document.getElementById('btn-use-my-email');
-    if (useMyEmailBtn) {
-      useMyEmailBtn.addEventListener('click', () => {
-        const u = store.state.auth.user;
-        if (!u || !u.email) {
-          showToast('No active account session found.');
-          return;
-        }
-        uiState.customRecipientEmail = u.email;
-        if (reminderRecipientInput) reminderRecipientInput.value = u.email;
-        const metrics = store.getComputedMetrics();
-        const inv = (metrics.invoices || []).find(i => i.id === uiState.selectedInvoiceId);
-        updateReminderRecipientField(inv, false);
-        showToast(`Recipient updated to your personal email (${u.email}) for testing!`, 'success');
-      });
-    }
-
-    const resetRecipientBtn = document.getElementById('btn-reset-recipient-email');
-    if (resetRecipientBtn) {
-      resetRecipientBtn.addEventListener('click', () => {
-        uiState.customRecipientEmail = null;
-        const metrics = store.getComputedMetrics();
-        const inv = (metrics.invoices || []).find(i => i.id === uiState.selectedInvoiceId);
-        updateReminderRecipientField(inv, true);
-        showToast('Recipient reset to invoice customer email.');
-      });
-    }
-
-    // Reminder Actions
-    const copyReminderBtn = document.getElementById('btn-copy-reminder');
-    if (copyReminderBtn) {
-      copyReminderBtn.addEventListener('click', () => {
-        const bodyInput = document.getElementById('reminder-body-preview');
-        if (bodyInput) {
-          navigator.clipboard.writeText(bodyInput.value).then(() => {
-            showToast('Reminder copied to clipboard!');
-          }).catch(() => {
-            showToast('Reminder copied to clipboard!');
-          });
-        }
-      });
-    }
-
-    const sendReminderBtn = document.getElementById('btn-send-reminder');
-    if (sendReminderBtn) {
-      sendReminderBtn.addEventListener('click', async () => {
-        const metrics = store.getComputedMetrics();
-        const inv = metrics.invoices.find(i => i.id === uiState.selectedInvoiceId);
-        const recipientInput = document.getElementById('reminder-recipient-email');
-        const subjectInput = document.getElementById('reminder-subject-input');
-        const bodyInput = document.getElementById('reminder-body-preview');
-
-        const toEmail = recipientInput ? recipientInput.value.trim() : '';
-        if (!toEmail || !toEmail.includes('@')) {
-          showToast('Please specify a valid recipient email address.');
-          if (recipientInput) recipientInput.focus();
-          return;
-        }
-
-        const originalBtnHtml = sendReminderBtn.innerHTML;
-        sendReminderBtn.disabled = true;
-        sendReminderBtn.innerHTML = `
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation: spin 1s linear infinite;"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
-          Sending...
-        `;
-
-        try {
-          const response = await fetch('/api/reminder/send', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              toEmail: toEmail,
-              subject: subjectInput ? subjectInput.value : `Payment Reminder for Invoice #${inv ? inv.id : ''}`,
-              message: bodyInput ? bodyInput.value : '',
-              customerName: inv ? inv.customer : '',
-              invoiceId: inv ? inv.id : '',
-              amount: inv ? inv.amount : '',
-              dueDate: inv ? formatDate(inv.dueDate) : '',
-              senderCompany: store.state.auth.user ? store.state.auth.user.company : 'RECO'
-            })
-          });
-
-          const data = await response.json();
-
-          if (inv) {
-            const acc = store.getCurrentAccount();
-            if (acc) {
-              acc.notifications.unshift({
-                id: `NOTIF-${Date.now()}`,
-                accountId: acc.user.id,
-                type: 'ai-insight',
-                title: 'REMINDER DISPATCHED',
-                message: `${uiState.currentTone.toUpperCase()} payment notice addressed to ${toEmail} for Invoice #${inv.id}.`,
-                timestamp: 'Just now',
-                read: false,
-                invoiceId: inv.id
-              });
-              store.saveCurrentAccount(acc);
-            }
-          }
-
-          if (data.success && data.emailSent) {
-            if (data.previewUrl) {
-              showToast(`✅ Payment reminder dispatched to ${toEmail}! <a href="${data.previewUrl}" target="_blank" rel="noopener noreferrer" style="color: #D5B893; text-decoration: underline; font-weight: 700; margin-left: 6px;">Inspect Live Email ↗</a>`, 'success', true);
-            } else {
-              showToast(`✅ Payment reminder delivered directly to ${toEmail}!`);
-            }
-          } else {
-            showToast(`⚠️ Reminder prepared for ${toEmail}. Add your Resend API Key in Settings to deliver to real inboxes.`);
-          }
-        } catch (err) {
-          console.error('[REMINDER DISPATCH ERROR]', err);
-          showToast(`📧 Payment reminder addressed to ${toEmail}!`);
-        } finally {
-          sendReminderBtn.disabled = false;
-          sendReminderBtn.innerHTML = originalBtnHtml;
-        }
-      });
-    }
-
-    const regenReminderBtn = document.getElementById('btn-regen-reminder');
-    if (regenReminderBtn) {
-      regenReminderBtn.addEventListener('click', () => {
-        updateReminderComposer(uiState.selectedInvoiceId, uiState.currentTone, false);
-        showToast('Generated fresh AI reminder draft.');
-      });
-    }
 
     // Export & Print Reports
     const exportBtn = document.getElementById('btn-export-report');

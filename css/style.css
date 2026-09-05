@@ -1563,11 +1563,13 @@ button {
    6. AI REVENUE COPILOT VIEW
    ========================================================================== */
 .copilot-layout-grid {
-  display: grid;
-  grid-template-columns: 1.4fr 1fr;
-  gap: 24px;
-  height: calc(100vh - var(--topbar-height) - 100px);
-  min-height: 600px;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 1080px;
+  margin: 0 auto;
+  height: calc(100vh - var(--topbar-height) - 120px);
+  min-height: 580px;
 }
 
 .copilot-chat-container {
