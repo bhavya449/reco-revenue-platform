@@ -77,7 +77,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function navigateTo(viewName) {
     const publicViews = ['landing', 'login'];
-    const knownViews = ['landing', 'login', 'dashboard', 'invoices', 'customers', 'copilot', 'simulator', 'reports', 'notifications', 'settings'];
+    const knownViews = ['landing', 'login', 'dashboard', 'invoices', 'customers', 'copilot', 'reports', 'notifications', 'settings'];
     const isAuth = store.state.auth.isAuthenticated;
 
     if (!knownViews.includes(viewName)) {
