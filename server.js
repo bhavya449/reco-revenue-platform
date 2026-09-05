@@ -12,34 +12,58 @@ const { sendWelcomeEmail, sendPaymentReminderEmail, sendTestEmail, isEmailConfig
 
 const app = express();
 const PORT = process.env.PORT || 8080;
-const DB_FILE = path.join(__dirname, 'data', 'db.json');
 
-// Ensure data directory exists
-if (!fs.existsSync(path.join(__dirname, 'data'))) {
-  fs.mkdirSync(path.join(__dirname, 'data'), { recursive: true });
+// Determine writable DB path: on Vercel/Lambda use /tmp, otherwise use local data/db.json
+const DB_FILE = process.env.VERCEL
+  ? path.join('/tmp', 'reco_db.json')
+  : path.join(__dirname, 'data', 'db.json');
+
+const BUNDLED_DB_FILE = path.join(__dirname, 'data', 'db.json');
+
+// In-memory cache for ultra-fast, resilient serverless execution
+let inMemoryDb = null;
+
+function getBundledDb() {
+  try {
+    if (fs.existsSync(BUNDLED_DB_FILE)) {
+      const raw = fs.readFileSync(BUNDLED_DB_FILE, 'utf-8');
+      return JSON.parse(raw);
+    }
+  } catch (e) {
+    console.warn('[DB INIT] Could not read bundled db.json, initializing empty store:', e.message);
+  }
+  return { accounts: {}, users: {}, sentEmails: [] };
 }
 
 // Database helper functions
 function readDb() {
-  try {
-    if (!fs.existsSync(DB_FILE)) {
-      const initial = { accounts: {}, users: {} };
-      fs.writeFileSync(DB_FILE, JSON.stringify(initial, null, 2));
-      return initial;
-    }
-    const data = fs.readFileSync(DB_FILE, 'utf-8');
-    return JSON.parse(data);
-  } catch (e) {
-    console.error('Database read error:', e);
-    return { accounts: {}, users: {} };
+  if (inMemoryDb) {
+    return inMemoryDb;
   }
+  try {
+    if (fs.existsSync(DB_FILE)) {
+      const data = fs.readFileSync(DB_FILE, 'utf-8');
+      inMemoryDb = JSON.parse(data);
+      return inMemoryDb;
+    }
+  } catch (e) {
+    console.warn('[DB READ] Filesystem read fallback triggered:', e.message);
+  }
+  inMemoryDb = getBundledDb();
+  return inMemoryDb;
 }
 
 function writeDb(data) {
+  inMemoryDb = data;
   try {
+    const dir = path.dirname(DB_FILE);
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
     fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2));
   } catch (e) {
-    console.error('Database write error:', e);
+    // Non-fatal on read-only filesystems (e.g. Vercel /var/task)
+    console.warn('[DB WRITE] Filesystem persistence skipped (in-memory state preserved):', e.message);
   }
 }
 
@@ -505,9 +529,10 @@ app.post('/api/settings/email', (req, res) => {
     if (smtpUser !== undefined) process.env.SMTP_USER = smtpUser.trim();
     if (smtpPass !== undefined) process.env.SMTP_PASS = smtpPass.trim();
 
-    // Persist to .env file if it exists or create one
-    const envPath = path.join(__dirname, '.env');
-    const envContent = `# RECO Platform Environment Variables
+    // Persist to .env file if filesystem is writable (safely ignored in read-only Vercel environment)
+    try {
+      const envPath = path.join(__dirname, '.env');
+      const envContent = `# RECO Platform Environment Variables
 PORT=${process.env.PORT || 8080}
 APP_URL=${process.env.APP_URL || 'http://localhost:8080'}
 
@@ -521,7 +546,10 @@ SMTP_PORT=${process.env.SMTP_PORT || '587'}
 SMTP_USER=${process.env.SMTP_USER || ''}
 SMTP_PASS=${process.env.SMTP_PASS || ''}
 `;
-    fs.writeFileSync(envPath, envContent);
+      fs.writeFileSync(envPath, envContent);
+    } catch (fsErr) {
+      console.log('[EMAIL SETTINGS] In-memory environment updated (filesystem is read-only).');
+    }
 
     const status = isEmailConfigured();
     console.log(`[EMAIL CONFIG UPDATED] Email Provider Status: ${status.provider} (Configured: ${status.configured})`);
@@ -582,8 +610,14 @@ app.get('/api/health', (req, res) => {
   res.json({
     status: 'online',
     platform: 'RECO AI Revenue Recovery Platform',
+    serverless: Boolean(process.env.VERCEL),
     timestamp: new Date().toISOString()
   });
+});
+
+// Favicon handlers to prevent unnecessary 404/500 errors
+app.get(['/favicon.ico', '/favicon.png'], (req, res) => {
+  res.status(204).end();
 });
 
 // Fallback for SPA routing to index.html
@@ -591,10 +625,15 @@ app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-// Start Server
-app.listen(PORT, () => {
-  console.log(`=======================================================`);
-  console.log(`🚀 RECO Platform Server running on http://localhost:${PORT}`);
-  console.log(`📧 Transactional Email Service: Configured`);
-  console.log(`=======================================================`);
-});
+// Start Server locally if not running in a serverless environment (e.g. Vercel)
+if (require.main === module && !process.env.VERCEL) {
+  app.listen(PORT, () => {
+    console.log(`=======================================================`);
+    console.log(`🚀 RECO Platform Server running on http://localhost:${PORT}`);
+    console.log(`📧 Transactional Email Service: Configured`);
+    console.log(`=======================================================`);
+  });
+}
+
+// Export Express app for Vercel Serverless Functions
+module.exports = app;
