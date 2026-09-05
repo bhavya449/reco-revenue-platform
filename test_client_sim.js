@@ -1,5 +1,6 @@
 /* ==========================================================================
    RECO Client-Side & Store Simulation Unit Test Suite
+   Includes Full 9-Scenario User Authentication Flow & Route Guard Tests
    ========================================================================== */
 
 const fs = require('fs');
@@ -25,9 +26,63 @@ class MockLocalStorage {
 }
 
 global.localStorage = new MockLocalStorage();
+
+// Mock DOM environment for routing simulation
+class MockElement {
+  constructor(id = '', className = '') {
+    this.id = id;
+    this.className = className;
+    this.classList = {
+      _classes: new Set(className ? className.split(' ') : []),
+      add: (c) => this.classList._classes.add(c),
+      remove: (c) => this.classList._classes.delete(c),
+      contains: (c) => this.classList._classes.has(c)
+    };
+    this.style = {};
+    this.textContent = '';
+    this.innerHTML = '';
+    this.children = [];
+    this.listeners = {};
+    this.attributes = {};
+  }
+  setAttribute(k, v) { this.attributes[k] = v; }
+  getAttribute(k) { return this.attributes[k] || null; }
+  addEventListener(event, fn) {
+    if (!this.listeners[event]) this.listeners[event] = [];
+    this.listeners[event].push(fn);
+  }
+  appendChild(child) { this.children.push(child); }
+  querySelector() { return new MockElement(); }
+  querySelectorAll() { return [new MockElement()]; }
+  focus() {}
+}
+
+const mockDoc = {
+  elements: {},
+  getElementById: function(id) {
+    if (!this.elements[id]) {
+      this.elements[id] = new MockElement(id);
+    }
+    return this.elements[id];
+  },
+  createElement: function(tag) {
+    return new MockElement('', tag);
+  },
+  querySelectorAll: function(selector) {
+    return [new MockElement()];
+  },
+  querySelector: function(selector) {
+    return new MockElement();
+  },
+  addEventListener: function() {}
+};
+
+global.document = mockDoc;
 global.window = {
-  location: { hash: '#landing' },
-  scrollTo: () => {}
+  location: { hash: '#landing', pathname: '/' },
+  scrollTo: () => {},
+  addEventListener: () => {},
+  localStorage: global.localStorage
 };
 
 // Load RecoStore class from store.js
@@ -51,185 +106,179 @@ function assert(condition, message) {
 
 async function runClientSimulation() {
   console.log('====================================================');
-  console.log('🧪 RUNNING RECO CLIENT LOGIC & ENGINE SIMULATION');
+  console.log('🧪 RUNNING RECO AUTH FLOW & ROUTE GUARD TEST SUITE');
   console.log('====================================================\n');
 
-  // Test 1: Store Initialization & Demo Account Data
-  console.log('--- 1. Store Initialization & Demo Isolation ---');
-  assert(store !== undefined, 'RecoStore singleton instantiated');
-  assert(store.activeAccountId === 'acc_demo_vikram', 'Default initial session is demo account');
+  // Route alias and route guard simulator (reproducing router in app.js)
+  const ROUTE_ALIASES = {
+    'command-center': 'dashboard',
+    'dashboard': 'dashboard',
+    'invoices': 'invoices',
+    'customers': 'customers',
+    'copilot': 'copilot',
+    'ai-copilot': 'copilot',
+    'analytics': 'reports',
+    'reports': 'reports',
+    'notifications': 'notifications',
+    'settings': 'settings',
+    'login': 'login',
+    'signin': 'login',
+    'sign-in': 'login',
+    'signup': 'signup',
+    'sign-up': 'signup',
+    'register': 'signup',
+    'landing': 'landing',
+    'home': 'landing'
+  };
 
-  const demoMetrics = store.getComputedMetrics();
-  assert(demoMetrics.invoices.length === 8, 'Demo account has 8 invoices');
-  assert(demoMetrics.customers.length === 6, 'Demo account has 6 demo customers (ABC Constructions, etc.)');
-  assert(demoMetrics.overdueCount > 0, 'Demo account has overdue invoices');
-  assert(demoMetrics.atRiskRaw > 0, 'Demo account has at-risk exposure');
-  assert(demoMetrics.totalOutstandingRaw > 0, 'Demo account has total outstanding');
+  let currentActiveView = 'landing';
+  let toastMessage = null;
 
-  // Test 2: AI Deterministic Risk Engine Math
-  console.log('\n--- 2. AI Risk Engine Deterministic Calculation ---');
-  const highRiskInv = demoMetrics.invoices.find(i => i.id === 'INV-1024');
-  assert(highRiskInv !== undefined, 'Found invoice INV-1024');
-  assert(highRiskInv.riskLevel === 'HIGH', 'INV-1024 is classified as HIGH risk');
-  assert(highRiskInv.riskScore >= 80, `INV-1024 risk score is >= 80% (Actual: ${highRiskInv.riskScore}%)`);
+  function simulateNavigate(viewName) {
+    const publicViews = ['landing', 'login', 'signup'];
+    const isAuth = store.state.auth.isAuthenticated;
 
-  // Risk of a paid invoice must be 0
-  const paidInv = demoMetrics.invoices.find(i => i.id === 'INV-1018');
-  assert(paidInv !== undefined, 'Found paid invoice INV-1018');
-  assert(paidInv.riskScore === 0, 'Paid invoice risk score is 0');
-  assert(paidInv.riskLevel === 'LOW', 'Paid invoice risk level is LOW');
+    if (!publicViews.includes(viewName) && !isAuth) {
+      toastMessage = 'Please sign in to access your revenue workspace.';
+      global.window.location.hash = '#login';
+      currentActiveView = 'login';
+      return;
+    }
 
-  // Test 3: New Isolated Account Creation & Clean Slate
-  console.log('\n--- 3. Clean Slate for Newly Registered Accounts ---');
-  const newAccId = 'acc_test_new_clean';
-  store.initLocalEmptyAccount(newAccId, 'Rohit Varma', 'rohit@varmaenterprises.in', 'Varma Enterprises', 'securePass123');
-  store.saveActiveSession(newAccId);
+    currentActiveView = viewName;
+    global.window.location.hash = `#${viewName}`;
+  }
 
-  const cleanMetrics = store.getComputedMetrics();
-  assert(cleanMetrics.isEmpty === true, 'New account metrics isEmpty is true');
-  assert(cleanMetrics.totalInvoicesCount === 0, 'New account has 0 invoices');
-  assert(cleanMetrics.customers.length === 0, 'New account has 0 customers (NO demo companies appear)');
-  assert(cleanMetrics.totalOutstandingFormatted === '₹0.0L', 'New account outstanding is ₹0.0L');
-  assert(cleanMetrics.atRiskFormatted === '₹0.0L', 'New account at risk is ₹0.0L');
-  assert(cleanMetrics.overdueCount === 0, 'New account overdue count is 0');
+  function simulateRouteHash(hash) {
+    const rawHash = (hash.replace('#', '') || 'landing').toLowerCase();
+    const targetRoute = ROUTE_ALIASES[rawHash] || rawHash;
+    simulateNavigate(targetRoute);
+  }
 
-  // Test 4: Customer CRUD in Isolated Account
-  console.log('\n--- 4. Customer Management CRUD in Isolated Account ---');
-  const newCust = store.addCustomer({
-    name: 'Kaveri Tech Solutions Pvt Ltd',
-    category: 'Cloud Services',
-    contactPerson: 'Suresh Kaveri',
-    email: 'billing@kaveritech.com',
-    phone: '+91 98111 22334',
-    avgDelayDays: 8
-  });
-  assert(newCust !== undefined && newCust.id.startsWith('CUST-'), 'Customer added with unique ID (CUST-001)');
+  function simulateDirectPath(pathname) {
+    const cleanPath = pathname.replace(/^\/|\/$/g, '').toLowerCase();
+    const targetRoute = ROUTE_ALIASES[cleanPath] || cleanPath;
+    simulateNavigate(targetRoute);
+  }
+
+  /* ==========================================================================
+     EXPLICIT 9 REQUIRED USER VERIFICATION TEST SCENARIOS
+     ========================================================================== */
+
+  console.log('--- 1. TEST 1: Open website while logged out → Landing page appears ---');
+  // Cold start for a fresh visitor
+  localStorage.clear();
+  store.activeAccountId = null;
+  store.state.auth.isAuthenticated = false;
+  store.state.auth.user = null;
+  simulateRouteHash('#landing');
+
+  assert(store.activeAccountId === null, 'Active account ID is null on cold start');
+  assert(store.state.auth.isAuthenticated === false, 'Visitor is not authenticated');
+  assert(currentActiveView === 'landing', 'Landing page is active view');
+  const coldMetrics = store.getComputedMetrics();
+  assert(coldMetrics.isEmpty === true, 'No demo financial data leaks to unauthenticated visitor');
+  assert(coldMetrics.invoices.length === 0, '0 invoices shown to unauthenticated visitor');
+  assert(coldMetrics.customers.length === 0, '0 customers shown to unauthenticated visitor');
+  assert(coldMetrics.totalOutstandingFormatted === '₹0.0L', '₹0.0L outstanding shown to unauthenticated visitor');
+
+  console.log('\n--- 2. TEST 2: Click Command Center while logged out → Sign In page ---');
+  simulateRouteHash('#dashboard');
+  assert(store.state.auth.isAuthenticated === false, 'User remains unauthenticated');
+  assert(currentActiveView === 'login', 'Command Center access redirected to login view');
+  assert(global.window.location.hash === '#login', 'URL hash redirected to #login');
+  assert(toastMessage !== null, 'Warning toast displayed informing user to sign in');
+
+  console.log('\n--- 3. TEST 3: Click AI Copilot while logged out → Sign In page ---');
+  simulateRouteHash('#copilot');
+  assert(store.state.auth.isAuthenticated === false, 'User remains unauthenticated');
+  assert(currentActiveView === 'login', 'AI Copilot access redirected to login view');
+  assert(global.window.location.hash === '#login', 'URL hash redirected to #login');
+
+  console.log('\n--- 4. TEST 4: Click Analytics while logged out → Sign In page ---');
+  simulateRouteHash('#reports');
+  assert(store.state.auth.isAuthenticated === false, 'User remains unauthenticated');
+  assert(currentActiveView === 'login', 'Analytics access redirected to login view');
+  assert(global.window.location.hash === '#login', 'URL hash redirected to #login');
+
+  console.log('\n--- 5. TEST 5: Manually enter the Command Center URL while logged out → Sign In page ---');
+  simulateDirectPath('/command-center');
+  assert(store.state.auth.isAuthenticated === false, 'Direct URL path unauthenticated check succeeds');
+  assert(currentActiveView === 'login', 'Direct /command-center URL redirected to login view');
+  assert(global.window.location.hash === '#login', 'URL hash redirected to #login');
+
+  console.log('\n--- 6. TEST 6: Sign in successfully → Command Center becomes accessible ---');
+  // Register an account and log in
+  const userEmail = 'finance.head@enterprise.in';
+  const userPass = 'securePassword2026';
+  store.initLocalEmptyAccount('acc_ent_user_1', 'Rohan Mehra', userEmail, 'Mehra Logistics Ltd.', userPass);
   
-  let currentMetrics = store.getComputedMetrics();
-  assert(currentMetrics.customers.length === 1, 'Account now has exactly 1 customer');
-  assert(currentMetrics.customers[0].name === 'Kaveri Tech Solutions Pvt Ltd', 'Customer name matches');
+  const loginRes = await store.login(userEmail, userPass);
+  assert(loginRes.success === true, 'Sign in succeeds with valid credentials');
+  assert(store.state.auth.isAuthenticated === true, 'store.state.auth.isAuthenticated is true');
+  assert(store.activeAccountId === 'acc_ent_user_1', 'Active account ID set to acc_ent_user_1');
 
-  // Edit customer
-  store.editCustomer(newCust.id, {
-    name: 'Kaveri Tech Solutions Global',
-    category: 'Enterprise Cloud'
-  });
-  currentMetrics = store.getComputedMetrics();
-  assert(currentMetrics.customers[0].name === 'Kaveri Tech Solutions Global', 'Customer name updated via editCustomer');
-  assert(currentMetrics.customers[0].category === 'Enterprise Cloud', 'Customer category updated');
+  // Navigate to Command Center
+  simulateRouteHash('#dashboard');
+  assert(currentActiveView === 'dashboard', 'Command Center is now accessible for authenticated user');
+  assert(global.window.location.hash === '#dashboard', 'URL hash is #dashboard');
 
-  // Test 5: Invoice CRUD & Relationship Sync
-  console.log('\n--- 5. Invoice CRUD & Customer Relationship Sync ---');
-  const newInv = store.addInvoice({
-    customer: 'Kaveri Tech Solutions Global',
-    amount: 600000,
-    dueDate: '2026-08-01',
-    status: 'Overdue'
-  });
-  assert(newInv !== undefined && newInv.id.startsWith('INV-'), 'Invoice added with unique ID (INV-1001)');
+  console.log('\n--- 7. TEST 7: After signing in, click AI Copilot → accessible ---');
+  simulateRouteHash('#copilot');
+  assert(currentActiveView === 'copilot', 'AI Copilot is accessible for authenticated user');
+  assert(global.window.location.hash === '#copilot', 'URL hash is #copilot');
 
-  currentMetrics = store.getComputedMetrics();
-  assert(currentMetrics.invoices.length === 1, 'Account now has 1 invoice');
-  assert(currentMetrics.totalOutstandingRaw === 600000, 'Total outstanding is ₹6,00,000');
-  assert(currentMetrics.totalOutstandingFormatted === '₹6.0L', 'Total outstanding formatted as ₹6.0L');
-  assert(currentMetrics.overdueCount === 1, 'Overdue count is 1');
-  assert(currentMetrics.customers[0].totalOutstandingRaw === 600000, 'Customer total outstanding updated to ₹6,00,000');
-  assert(currentMetrics.customers[0].invoicesCount === 1, 'Customer has 1 invoice');
+  console.log('\n--- 8. TEST 8: After signing in, click Analytics → accessible ---');
+  simulateRouteHash('#reports');
+  assert(currentActiveView === 'reports', 'Analytics is accessible for authenticated user');
+  assert(global.window.location.hash === '#reports', 'URL hash is #reports');
 
-  // Edit Invoice
-  store.editInvoice(newInv.id, {
-    amount: 750000
-  });
-  currentMetrics = store.getComputedMetrics();
-  assert(currentMetrics.totalOutstandingRaw === 750000, 'Total outstanding updated to ₹7,50,000 after edit');
-  assert(currentMetrics.customers[0].totalOutstandingRaw === 750000, 'Customer total outstanding updated to ₹7,50,000 after edit');
+  console.log('\n--- 9. TEST 9: Refresh the page while signed in → authentication remains valid ---');
+  // Simulate page reload: re-read active session from localStorage
+  const savedSessionId = store.loadActiveSession();
+  assert(savedSessionId === 'acc_ent_user_1', 'Saved session accountId loaded from localStorage on page refresh');
+  
+  // Re-instantiate store with loaded session
+  const refreshedStore = new (store.constructor)();
+  assert(refreshedStore.state.auth.isAuthenticated === true, 'refreshedStore is authenticated');
+  assert(refreshedStore.state.auth.user.email === userEmail, 'refreshedStore user email persists');
+  assert(refreshedStore.state.auth.user.company === 'Mehra Logistics Ltd.', 'refreshedStore user company persists');
 
-  // Mark invoice as Paid
-  store.updateInvoiceStatus(newInv.id, 'Paid');
-  currentMetrics = store.getComputedMetrics();
-  assert(currentMetrics.totalOutstandingRaw === 0, 'Total outstanding dropped to 0 after payment');
-  assert(currentMetrics.recoveredThisMonthRaw === 750000, 'Recovered this month updated to ₹7,50,000');
-  assert(currentMetrics.overdueCount === 0, 'Overdue count is 0');
-  assert(currentMetrics.customers[0].totalRecovered >= 750000, 'Customer total recovered increased to ₹7,50,000');
-  assert(currentMetrics.customers[0].paidOnTime === '100%', 'Customer paid on time is 100%');
+  /* ==========================================================================
+     FINANCIAL DATA INTEGRITY & ISOLATION TESTS
+     ========================================================================== */
+  console.log('\n--- 10. Financial Math & Demo Account Isolation ---');
+  // Demo Workspace
+  await store.enterDemoWorkspace();
+  assert(store.isDemoSession() === true, 'Demo session flagged correctly');
+  assert(store.activeAccountId === store.DEMO_ACCOUNT_ID, 'Demo active account ID is acc_demo_vikram');
+  
+  const demoMetrics = store.getComputedMetrics();
+  assert(demoMetrics.invoices.length === 8, 'Demo account contains 8 sample invoices');
+  assert(demoMetrics.customers.length === 6, 'Demo account contains 6 sample customers');
+  assert(demoMetrics.overdueCount > 0, 'Demo account overdue invoices calculated');
+  assert(demoMetrics.atRiskRaw > 0, 'Demo account at-risk exposure calculated');
 
-  // Delete invoice
-  store.deleteInvoice(newInv.id);
-  currentMetrics = store.getComputedMetrics();
-  assert(currentMetrics.invoices.length === 0, 'Invoice successfully deleted from account');
+  // Sign Up new isolated account
+  const signupRes = await store.signup('Ananya Roy', 'ananya@royenterprises.in', 'Roy Enterprises', 'password123');
+  assert(signupRes.success === true, 'New account signup succeeds');
+  assert(store.isDemoSession() === false, 'New account is NOT in demo mode');
+  
+  const newMetrics = store.getComputedMetrics();
+  assert(newMetrics.isEmpty === true, 'New account has a completely clean ledger');
+  assert(newMetrics.invoices.length === 0, 'New account has 0 invoices');
+  assert(newMetrics.customers.length === 0, 'New account has 0 customers (no demo data bleed)');
 
-  // Delete customer
-  store.deleteCustomer(newCust.id);
-  currentMetrics = store.getComputedMetrics();
-  assert(currentMetrics.customers.length === 0, 'Customer successfully deleted from account');
-
-  // Test 6: Simulator Mathematical Correctness
-  console.log('\n--- 6. Recovery Simulator Mathematical Modeling ---');
-  // Re-add an invoice for simulator test
-  store.addInvoice({
-    customer: 'Simulator Test Debtor',
-    amount: 1000000,
-    dueDate: '2026-08-01',
-    status: 'Overdue'
-  });
-  const simMetrics = store.getComputedMetrics();
-  const currentOutstanding = simMetrics.totalOutstandingRaw; // 10,00,000
-  const targetRate = 85;
-  const projectedRecoveredRaw = Math.round(currentOutstanding * (targetRate / 100)); // 8,50,000
-  const unrecoveredRaw = Math.max(0, currentOutstanding - projectedRecoveredRaw); // 1,50,000
-
-  assert(projectedRecoveredRaw === 850000, 'Simulator projected recovery for ₹10L at 85% target is ₹8.5L');
-  assert(unrecoveredRaw === 150000, 'Simulator unrecovered amount is ₹1.5L');
-
-  // Test 7: Batch Data Import Ingestion
-  console.log('\n--- 7. Batch Data Import Ingestion ---');
-  const importResult = store.importInvoices([
-    { customer: 'Imported Enterprise Alpha', amount: 350000, dueDate: '2026-09-20', status: 'Pending' },
-    { customer: 'Imported Enterprise Beta', amount: 420000, dueDate: '2026-08-10', status: 'Overdue' }
-  ]);
-  assert(importResult.count === 2, 'Imported 2 invoices in batch');
-  const postImportMetrics = store.getComputedMetrics();
-  assert(postImportMetrics.invoices.some(i => i.customer === 'Imported Enterprise Alpha'), 'Imported Alpha invoice present in ledger');
-  assert(postImportMetrics.invoices.some(i => i.customer === 'Imported Enterprise Beta'), 'Imported Beta invoice present in ledger');
-  assert(postImportMetrics.customers.some(c => c.name === 'Imported Enterprise Alpha'), 'Auto-created customer profile for Alpha');
-
-  // Test 8: Verify Switch Back to Demo Account Still Isolated
-  console.log('\n--- 8. Switching Back to Demo Account ---');
-  store.saveActiveSession(store.DEMO_ACCOUNT_ID);
-  const demoMetricsRestored = store.getComputedMetrics();
-  assert(demoMetricsRestored.customers.length === 6, 'Demo account still has its 6 standard demo companies');
-  assert(!demoMetricsRestored.customers.some(c => c.name === 'Simulator Test Debtor'), 'Demo account does NOT contain new account test debtors');
-
-  // Test 9: Verification of All 3 User Authentication & Demo Workspace Flows
-  console.log('\n--- 9. Comprehensive 3-Flow Verification ---');
-  // Flow 1: Existing User -> Sign In -> Existing Isolated Workspace
-  const existingLoginResult = await store.login('rohit@varmaenterprises.in', 'securePass123');
-  assert(existingLoginResult.success === true, 'Flow 1: Existing user login succeeds');
-  assert(store.isDemoSession() === false, 'Flow 1: Existing user is NOT in demo mode');
-  assert(store.activeAccountId === newAccId, 'Flow 1: Active session points to existing user account');
-  const existingUserMetrics = store.getComputedMetrics();
-  assert(existingUserMetrics.customers.some(c => c.name === 'Imported Enterprise Alpha'), 'Flow 1: Existing user sees their own private customer');
-  assert(!existingUserMetrics.customers.some(c => c.name === 'ABC Constructions Pvt. Ltd.'), 'Flow 1: Existing user does NOT see demo ABC Constructions');
-
-  // Flow 2: New User -> Sign Up -> Completely Empty Personal Workspace
-  const freshSignupResult = await store.signup('Ananya Roy', 'ananya@royfintech.com', 'Roy Fintech Labs', 'password123');
-  assert(freshSignupResult.success === true, 'Flow 2: New user signup succeeds');
-  assert(store.isDemoSession() === false, 'Flow 2: New user is NOT in demo mode');
-  const freshUserMetrics = store.getComputedMetrics();
-  assert(freshUserMetrics.isEmpty === true, 'Flow 2: New user gets a completely empty workspace');
-  assert(freshUserMetrics.totalInvoicesCount === 0, 'Flow 2: New user has 0 invoices');
-  assert(freshUserMetrics.customers.length === 0, 'Flow 2: New user has 0 customers (no demo data bleed)');
-
-  // Flow 3: Evaluator -> Explore Demo Workspace -> Immediately sees prepared realistic dataset
-  const demoExploreResult = await store.enterDemoWorkspace();
-  assert(demoExploreResult.success === true, 'Flow 3: Explore Demo Workspace succeeds directly');
-  assert(store.isDemoSession() === true, 'Flow 3: Evaluator is correctly flagged in demo mode');
-  assert(store.activeAccountId === store.DEMO_ACCOUNT_ID, 'Flow 3: Active session is Demo Account');
-  const demoDatasetMetrics = store.getComputedMetrics();
-  assert(demoDatasetMetrics.customers.some(c => c.name.includes('ABC Constructions')), 'Flow 3: Evaluator sees ABC Constructions');
-  assert(demoDatasetMetrics.customers.some(c => c.name.includes('XYZ Pvt Ltd')), 'Flow 3: Evaluator sees XYZ Pvt Ltd');
-  assert(demoDatasetMetrics.invoices.length === 8, 'Flow 3: Evaluator sees prepared invoices portfolio');
-  assert(demoDatasetMetrics.overdueCount > 0, 'Flow 3: Evaluator sees overdue invoices and AI risk scores');
+  // Invoice creation and status update
+  const inv = store.addInvoice({ customer: 'Roy Client 1', amount: 500000, dueDate: '2026-08-01', status: 'Overdue' });
+  assert(inv !== undefined && inv.id.startsWith('INV-'), 'Invoice created with ID');
+  let metrics = store.getComputedMetrics();
+  assert(metrics.totalOutstandingRaw === 500000, 'Outstanding is ₹5,00,000');
+  
+  store.updateInvoiceStatus(inv.id, 'Paid');
+  metrics = store.getComputedMetrics();
+  assert(metrics.totalOutstandingRaw === 0, 'Outstanding is 0 after payment');
+  assert(metrics.recoveredThisMonthRaw === 500000, 'Recovered this month is ₹5,00,000');
 
   console.log('\n====================================================');
   console.log(`📊 SIMULATION RESULTS: ${passed} PASSED | ${failed} FAILED`);

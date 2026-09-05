@@ -298,7 +298,7 @@ class RecoStore {
     } catch (e) {
       console.warn('Error loading active session:', e);
     }
-    return this.DEMO_ACCOUNT_ID;
+    return null;
   }
 
   saveActiveSession(accountId) {

@@ -30,8 +30,39 @@ document.addEventListener('DOMContentLoaded', () => {
   /* ==========================================================================
      1. Router & View Management
      ========================================================================== */
+  const ROUTE_ALIASES = {
+    'command-center': 'dashboard',
+    'dashboard': 'dashboard',
+    'invoices': 'invoices',
+    'customers': 'customers',
+    'copilot': 'copilot',
+    'ai-copilot': 'copilot',
+    'analytics': 'reports',
+    'reports': 'reports',
+    'notifications': 'notifications',
+    'settings': 'settings',
+    'login': 'login',
+    'signin': 'login',
+    'sign-in': 'login',
+    'signup': 'signup',
+    'sign-up': 'signup',
+    'register': 'signup',
+    'landing': 'landing',
+    'home': 'landing'
+  };
+
   function initRouter() {
     window.addEventListener('hashchange', handleRoute);
+
+    // Support direct pathname entry (e.g., /command-center or /dashboard)
+    if (typeof window !== 'undefined' && window.location) {
+      const pathName = window.location.pathname.replace(/^\/|\/$/g, '').toLowerCase();
+      if (pathName && ROUTE_ALIASES[pathName]) {
+        window.location.hash = `#${ROUTE_ALIASES[pathName]}`;
+        return;
+      }
+    }
+
     if (!window.location.hash) {
       window.location.hash = '#landing';
     } else {
@@ -40,15 +71,17 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function handleRoute() {
-    const hash = window.location.hash.replace('#', '') || 'landing';
-    if (hash === 'signup') {
+    const rawHash = (window.location.hash.replace('#', '') || 'landing').toLowerCase();
+    const targetRoute = ROUTE_ALIASES[rawHash] || rawHash;
+
+    if (targetRoute === 'signup') {
       navigateTo('login');
       switchAuthTab('signup');
-    } else if (hash === 'login') {
+    } else if (targetRoute === 'login') {
       navigateTo('login');
       switchAuthTab('login');
     } else {
-      navigateTo(hash);
+      navigateTo(targetRoute);
     }
   }
 
