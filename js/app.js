@@ -129,6 +129,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const user = store.state.auth.user;
     if (!user) return;
 
+    const isDemo = store.isDemoSession();
+
     const nameEls = document.querySelectorAll('.user-name-display');
     nameEls.forEach(el => el.textContent = user.name || "User");
     
@@ -144,6 +146,18 @@ document.addEventListener('DOMContentLoaded', () => {
     const myEmailLabel = document.getElementById('my-account-email-label');
     if (myEmailLabel && user.email) {
       myEmailLabel.textContent = user.email;
+    }
+
+    // Toggle Demo Workspace indicator in Topbar
+    const demoTopbarBadge = document.getElementById('demo-mode-topbar-badge');
+    if (demoTopbarBadge) {
+      demoTopbarBadge.style.display = isDemo ? 'inline-flex' : 'none';
+    }
+
+    // Toggle Demo Workspace Banner on Dashboard
+    const demoBanner = document.getElementById('demo-workspace-banner');
+    if (demoBanner) {
+      demoBanner.style.display = (isDemo && uiState.currentView === 'dashboard') ? 'flex' : 'none';
     }
 
     // Update notification badge count in sidebar
@@ -2113,11 +2127,11 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     }
 
-    const demoLoginBtn = document.getElementById('btn-demo-login');
-    if (demoLoginBtn) {
-      demoLoginBtn.addEventListener('click', async () => {
-        await store.login('vikram@apexenterprise.com', 'demopass123');
-        showToast('Authenticated as Demo Account (Vikram Malhotra)');
+    const exploreDemoBtn = document.getElementById('btn-explore-demo-workspace') || document.getElementById('btn-demo-login');
+    if (exploreDemoBtn) {
+      exploreDemoBtn.addEventListener('click', async () => {
+        await store.enterDemoWorkspace();
+        showToast('Entered Demo Workspace · Exploring sample enterprise receivables.');
         setTimeout(() => window.location.hash = '#dashboard', 200);
       });
     }

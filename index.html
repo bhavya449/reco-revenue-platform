@@ -272,6 +272,10 @@
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg>
             <strong id="topbar-page-title">Dashboard</strong>
           </div>
+          <div id="demo-mode-topbar-badge" class="badge badge-tan demo-topbar-indicator" style="display: none; align-items: center; gap: 6px; padding: 4px 12px; font-size: 0.74rem; font-weight: 700; letter-spacing: 0.04em; margin-left: 12px;">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <span>DEMO WORKSPACE · SAMPLE DATA</span>
+          </div>
         </div>
 
         <div class="topbar-right">
@@ -316,13 +320,13 @@
               <!-- Sign In Form -->
               <form id="login-form">
                 <div class="form-group">
-                  <label class="form-label">Work Email Address</label>
-                  <input type="email" id="login-email" class="form-control" value="vikram@apexenterprise.com" required>
+                  <label class="form-label">Email</label>
+                  <input type="email" id="login-email" class="form-control" placeholder="name@company.com" required>
                 </div>
 
                 <div class="form-group">
                   <label class="form-label">Password</label>
-                  <input type="password" id="login-password" class="form-control" value="demopass123" required>
+                  <input type="password" id="login-password" class="form-control" placeholder="••••••••" required>
                 </div>
 
                 <div class="auth-options">
@@ -333,9 +337,27 @@
                   <a href="javascript:void(0)" class="forgot-password-link" onclick="alert('Password reset link has been dispatched to your corporate email.')">Forgot password?</a>
                 </div>
 
-                <button type="submit" class="btn btn-primary" style="width: 100%; padding: 12px;">
-                  LOGIN TO RECO
+                <button type="submit" class="btn btn-primary" style="width: 100%; padding: 12px; font-weight: 700;">
+                  Sign In
                 </button>
+
+                <!-- Separated Option: Explore Demo Workspace -->
+                <div class="demo-workspace-divider">
+                  <span>OR</span>
+                </div>
+
+                <div class="demo-workspace-card">
+                  <div class="demo-workspace-header">
+                    <span class="demo-workspace-tag">Interactive Preview</span>
+                    <h4 class="demo-workspace-title">Want to explore RECO first?</h4>
+                    <p class="demo-workspace-desc">
+                      Tour a pre-populated Demo Workspace with realistic debtors (ABC Constructions, XYZ Pvt Ltd, etc.), live receivables, AI risk scoring, and recovery reports.
+                    </p>
+                  </div>
+                  <button type="button" id="btn-explore-demo-workspace" class="btn btn-tan demo-explore-btn">
+                    <span>Explore Demo Workspace &rarr;</span>
+                  </button>
+                </div>
               </form>
 
               <!-- Sign Up Form (Initially hidden) -->
@@ -360,18 +382,10 @@
                   <input type="password" id="signup-password" class="form-control" placeholder="••••••••" minlength="6" required>
                 </div>
 
-                <button type="submit" class="btn btn-primary" style="width: 100%; padding: 12px; margin-top: 10px;">
+                <button type="submit" class="btn btn-primary" style="width: 100%; padding: 12px; margin-top: 10px; font-weight: 700;">
                   CREATE ENTERPRISE ACCOUNT
                 </button>
               </form>
-
-              <div class="demo-credentials-box">
-                <div>
-                  <strong>Demo Mode Available</strong><br>
-                  <span>Pre-authenticated as Collections Lead</span>
-                </div>
-                <button id="btn-demo-login" class="btn btn-sm btn-tan">1-Click Login</button>
-              </div>
             </div>
           </div>
         </section>
@@ -380,6 +394,17 @@
              3. DASHBOARD VIEW
              ==================================================================== -->
         <section id="view-dashboard" class="app-view">
+          <!-- Demo Notice Banner (Shown only in Demo Workspace) -->
+          <div id="demo-workspace-banner" class="demo-workspace-banner" style="display: none;">
+            <div class="demo-banner-content">
+              <span class="badge badge-tan" style="font-size: 0.72rem; padding: 3px 8px;">SAMPLE DATA</span>
+              <span><strong>Demo Workspace:</strong> You are exploring a demonstration environment populated with realistic sample debtors and recovery scenarios.</span>
+            </div>
+            <div class="demo-banner-actions">
+              <a href="#login" class="btn btn-sm btn-secondary logout-trigger-btn" style="padding: 4px 12px; font-size: 0.78rem;">Exit Demo Workspace</a>
+            </div>
+          </div>
+
           <div class="dashboard-header-greeting">
             <div>
               <h1 class="dashboard-greeting-title">Good morning, <span class="user-name-display">Vikram</span> 👋</h1>

@@ -200,6 +200,37 @@ async function runClientSimulation() {
   assert(demoMetricsRestored.customers.length === 6, 'Demo account still has its 6 standard demo companies');
   assert(!demoMetricsRestored.customers.some(c => c.name === 'Simulator Test Debtor'), 'Demo account does NOT contain new account test debtors');
 
+  // Test 9: Verification of All 3 User Authentication & Demo Workspace Flows
+  console.log('\n--- 9. Comprehensive 3-Flow Verification ---');
+  // Flow 1: Existing User -> Sign In -> Existing Isolated Workspace
+  const existingLoginResult = await store.login('rohit@varmaenterprises.in', 'securePass123');
+  assert(existingLoginResult.success === true, 'Flow 1: Existing user login succeeds');
+  assert(store.isDemoSession() === false, 'Flow 1: Existing user is NOT in demo mode');
+  assert(store.activeAccountId === newAccId, 'Flow 1: Active session points to existing user account');
+  const existingUserMetrics = store.getComputedMetrics();
+  assert(existingUserMetrics.customers.some(c => c.name === 'Imported Enterprise Alpha'), 'Flow 1: Existing user sees their own private customer');
+  assert(!existingUserMetrics.customers.some(c => c.name === 'ABC Constructions Pvt. Ltd.'), 'Flow 1: Existing user does NOT see demo ABC Constructions');
+
+  // Flow 2: New User -> Sign Up -> Completely Empty Personal Workspace
+  const freshSignupResult = await store.signup('Ananya Roy', 'ananya@royfintech.com', 'Roy Fintech Labs', 'password123');
+  assert(freshSignupResult.success === true, 'Flow 2: New user signup succeeds');
+  assert(store.isDemoSession() === false, 'Flow 2: New user is NOT in demo mode');
+  const freshUserMetrics = store.getComputedMetrics();
+  assert(freshUserMetrics.isEmpty === true, 'Flow 2: New user gets a completely empty workspace');
+  assert(freshUserMetrics.totalInvoicesCount === 0, 'Flow 2: New user has 0 invoices');
+  assert(freshUserMetrics.customers.length === 0, 'Flow 2: New user has 0 customers (no demo data bleed)');
+
+  // Flow 3: Evaluator -> Explore Demo Workspace -> Immediately sees prepared realistic dataset
+  const demoExploreResult = await store.enterDemoWorkspace();
+  assert(demoExploreResult.success === true, 'Flow 3: Explore Demo Workspace succeeds directly');
+  assert(store.isDemoSession() === true, 'Flow 3: Evaluator is correctly flagged in demo mode');
+  assert(store.activeAccountId === store.DEMO_ACCOUNT_ID, 'Flow 3: Active session is Demo Account');
+  const demoDatasetMetrics = store.getComputedMetrics();
+  assert(demoDatasetMetrics.customers.some(c => c.name.includes('ABC Constructions')), 'Flow 3: Evaluator sees ABC Constructions');
+  assert(demoDatasetMetrics.customers.some(c => c.name.includes('XYZ Pvt Ltd')), 'Flow 3: Evaluator sees XYZ Pvt Ltd');
+  assert(demoDatasetMetrics.invoices.length === 8, 'Flow 3: Evaluator sees prepared invoices portfolio');
+  assert(demoDatasetMetrics.overdueCount > 0, 'Flow 3: Evaluator sees overdue invoices and AI risk scores');
+
   console.log('\n====================================================');
   console.log(`📊 SIMULATION RESULTS: ${passed} PASSED | ${failed} FAILED`);
   console.log('====================================================\n');

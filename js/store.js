@@ -315,6 +315,28 @@ class RecoStore {
     this.notify();
   }
 
+  isDemoSession() {
+    return this.activeAccountId === this.DEMO_ACCOUNT_ID;
+  }
+
+  async enterDemoWorkspace() {
+    let demoData = this.getAccountData(this.DEMO_ACCOUNT_ID);
+    if (!demoData || !demoData.customers || demoData.customers.length === 0) {
+      demoData = this.getDemoDataset();
+      this.saveAccountData(this.DEMO_ACCOUNT_ID, demoData);
+    }
+    this.saveActiveSession(this.DEMO_ACCOUNT_ID);
+    return {
+      success: true,
+      accountId: this.DEMO_ACCOUNT_ID,
+      user: demoData.user || {
+        name: "Vikram Malhotra",
+        company: "Apex Enterprise Solutions Pvt. Ltd.",
+        role: "Head of Credit & Collections"
+      }
+    };
+  }
+
   getAccountData(accountId) {
     try {
       const key = `RECO_ACCOUNT_DATA_${accountId}`;
@@ -992,22 +1014,24 @@ class RecoStore {
       return { success: true, accountId: this.DEMO_ACCOUNT_ID };
     }
 
-    // Try Backend API First
-    try {
-      const resp = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: normalizedEmail, password })
-      });
-      const data = await resp.json();
-      if (resp.ok && data.success) {
-        this.saveActiveSession(data.accountId);
-        return { success: true, accountId: data.accountId };
-      } else if (!resp.ok) {
-        return { success: false, message: data.message || "Login failed." };
+    // Try Backend API First (if running in browser with HTTP host)
+    if (typeof window !== 'undefined' && window.location && window.location.protocol && window.location.protocol.startsWith('http')) {
+      try {
+        const resp = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: normalizedEmail, password })
+        });
+        const data = await resp.json();
+        if (resp.ok && data.success) {
+          this.saveActiveSession(data.accountId);
+          return { success: true, accountId: data.accountId };
+        } else if (!resp.ok) {
+          return { success: false, message: data.message || "Login failed." };
+        }
+      } catch (apiErr) {
+        console.warn('Backend API login offline, falling back to local registry:', apiErr);
       }
-    } catch (apiErr) {
-      console.warn('Backend API login offline, falling back to local registry:', apiErr);
     }
 
     // Fallback: Look up in Local Accounts Registry
@@ -1041,44 +1065,46 @@ class RecoStore {
     const normalizedEmail = email.trim().toLowerCase();
 
     // 1. Try Backend API (With Real Transactional Welcome Email)
-    try {
-      const resp = await fetch('/api/auth/signup', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: name.trim(),
-          email: normalizedEmail,
-          company: (company || "Enterprise Corp").trim(),
-          password
-        })
-      });
+    if (typeof window !== 'undefined' && window.location && window.location.protocol && window.location.protocol.startsWith('http')) {
+      try {
+        const resp = await fetch('/api/auth/signup', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: name.trim(),
+            email: normalizedEmail,
+            company: (company || "Enterprise Corp").trim(),
+            password
+          })
+        });
 
-      const data = await resp.json();
+        const data = await resp.json();
 
-      if (!resp.ok || !data.success) {
+        if (!resp.ok || !data.success) {
+          return {
+            success: false,
+            error: data.error,
+            message: data.message || "Signup failed."
+          };
+        }
+
+        // Backend created account successfully!
+        const newAccountId = data.accountId;
+
+        // Sync local isolated store for this account
+        this.initLocalEmptyAccount(newAccountId, name, normalizedEmail, company, password);
+        this.saveActiveSession(newAccountId);
+
         return {
-          success: false,
-          error: data.error,
-          message: data.message || "Signup failed."
+          success: true,
+          accountId: newAccountId,
+          emailSent: data.emailSent,
+          message: data.message
         };
+
+      } catch (apiErr) {
+        console.warn('Backend API signup offline, performing local registration:', apiErr);
       }
-
-      // Backend created account successfully!
-      const newAccountId = data.accountId;
-
-      // Sync local isolated store for this account
-      this.initLocalEmptyAccount(newAccountId, name, normalizedEmail, company, password);
-      this.saveActiveSession(newAccountId);
-
-      return {
-        success: true,
-        accountId: newAccountId,
-        emailSent: data.emailSent,
-        message: data.message
-      };
-
-    } catch (apiErr) {
-      console.warn('Backend API signup offline, performing local registration:', apiErr);
     }
 
     // 2. Fallback for standalone/offline execution
