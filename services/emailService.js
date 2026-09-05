@@ -314,7 +314,7 @@ async function getEtherealTransporter() {
 
 /**
  * Dispatches payment reminder email to customer recipient via Resend API, custom SMTP, or Ethereal Mail.
- * @returns {Promise<{ success: boolean, emailSent: boolean, messageId?: string, previewUrl?: string, error?: string, message?: string }>}
+ * @returns {Promise<{ success: boolean, emailSent: boolean, messageId?: string, previewUrl?: string, provider: string, error?: string, details?: any, message?: string }>}
  */
 async function sendPaymentReminderEmail({ toEmail, subject, message, customerName, invoiceId, amount, dueDate, senderCompany }) {
   const fromEmail = process.env.EMAIL_FROM || 'RECO Reminders <onboarding@resend.dev>';
@@ -323,8 +323,17 @@ async function sendPaymentReminderEmail({ toEmail, subject, message, customerNam
 
   const resendApiKey = process.env.RESEND_API_KEY || process.env.EMAIL_API_KEY;
 
+  console.log(`\n------------------------------------------------------------`);
+  console.log(`[EMAIL DISPATCH INITIATED]`);
+  console.log(`  To:       ${toEmail}`);
+  console.log(`  From:     ${fromEmail}`);
+  console.log(`  Subject:  ${subject}`);
+  console.log(`  Invoice:  #${invoiceId || 'N/A'}`);
+  console.log(`------------------------------------------------------------`);
+
   // 1. Try Resend Service if API Key is configured
   if (resendApiKey && resendApiKey.startsWith('re_') && resendApiKey !== 're_your_api_key_here') {
+    console.log(`[EMAIL PROVIDER] Attempting transmission via Resend SDK (Key: ${resendApiKey.substring(0, 6)}••••••••)`);
     try {
       const resend = new Resend(resendApiKey);
       const response = await resend.emails.send({
@@ -335,12 +344,22 @@ async function sendPaymentReminderEmail({ toEmail, subject, message, customerNam
         text: textContent
       });
 
+      console.log(`[RESEND API RESPONSE RAW]:`, JSON.stringify(response, null, 2));
+
       if (response.error) {
-        console.error('[REMINDER EMAIL ERROR] Resend API rejected message:', response.error);
-        return { success: false, emailSent: false, error: response.error.message || 'Resend delivery failed' };
+        console.error(`[RESEND DISPATCH REJECTED] Error:`, response.error);
+        return { 
+          success: false, 
+          emailSent: false, 
+          provider: 'Resend', 
+          error: response.error.message || 'Resend delivery rejected',
+          details: response.error,
+          message: `Resend error: ${response.error.message}`
+        };
       }
 
-      console.log(`[REMINDER EMAIL SUCCESS] Real payment reminder sent via Resend to ${toEmail} for Invoice #${invoiceId} (Message ID: ${response.data ? response.data.id : 'OK'})`);
+      const messageId = response.data ? response.data.id : 'SENT_OK';
+      console.log(`[RESEND DISPATCH SUCCESS] Real email delivered to ${toEmail} | Message-ID: ${messageId}`);
       return { 
         success: true, 
         emailSent: true,
@@ -348,17 +367,24 @@ async function sendPaymentReminderEmail({ toEmail, subject, message, customerNam
         toEmail,
         subject,
         html: htmlContent,
-        messageId: response.data ? response.data.id : 'SENT',
+        messageId: messageId,
         message: `Payment reminder delivered to ${toEmail} via Resend.`
       };
     } catch (err) {
-      console.error('[REMINDER EMAIL ERROR] Exception sending with Resend:', err.message);
-      return { success: false, emailSent: false, error: err.message };
+      console.error(`[RESEND EXCEPTION] Message: ${err.message}\nStack: ${err.stack}`);
+      return { 
+        success: false, 
+        emailSent: false, 
+        provider: 'Resend', 
+        error: err.message, 
+        details: err.stack 
+      };
     }
   }
 
   // 2. Try SMTP Transport if SMTP Credentials are configured (e.g. Gmail / Outlook / Custom SMTP)
   if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS) {
+    console.log(`[EMAIL PROVIDER] Attempting transmission via Custom SMTP (${process.env.SMTP_HOST}:${process.env.SMTP_PORT || 587})`);
     try {
       const transporter = nodemailer.createTransport({
         host: process.env.SMTP_HOST,
@@ -378,7 +404,7 @@ async function sendPaymentReminderEmail({ toEmail, subject, message, customerNam
         text: textContent
       });
 
-      console.log(`[REMINDER EMAIL SUCCESS] Real payment reminder sent via SMTP to ${toEmail} for Invoice #${invoiceId} (Message ID: ${info.messageId})`);
+      console.log(`[SMTP DISPATCH SUCCESS] Real email delivered to ${toEmail} | Message-ID: ${info.messageId}`);
       return { 
         success: true, 
         emailSent: true,
@@ -390,12 +416,19 @@ async function sendPaymentReminderEmail({ toEmail, subject, message, customerNam
         message: `Payment reminder delivered to ${toEmail} via SMTP.`
       };
     } catch (err) {
-      console.error('[REMINDER EMAIL ERROR] Exception sending with SMTP:', err.message);
-      return { success: false, emailSent: false, error: err.message };
+      console.error(`[SMTP EXCEPTION] Message: ${err.message}\nStack: ${err.stack}`);
+      return { 
+        success: false, 
+        emailSent: false, 
+        provider: 'SMTP', 
+        error: err.message, 
+        details: err.stack 
+      };
     }
   }
 
   // 3. Live Zero-Config Webmail Transmission (Ethereal Mail Delivery)
+  console.log(`[EMAIL PROVIDER] Using Zero-Config Live Webmail (Ethereal)`);
   try {
     const transporter = await getEtherealTransporter();
     if (transporter) {
@@ -408,7 +441,10 @@ async function sendPaymentReminderEmail({ toEmail, subject, message, customerNam
       });
 
       const previewUrl = nodemailer.getTestMessageUrl(info);
-      console.log(`[LIVE EMAIL TRANSMITTED] Recipient: ${toEmail} | Message-ID: ${info.messageId} | Live Webmail Preview: ${previewUrl}`);
+      console.log(`[LIVE ETHEREAL DISPATCH SUCCESS]`);
+      console.log(`  Recipient:    ${toEmail}`);
+      console.log(`  Message-ID:   ${info.messageId}`);
+      console.log(`  Webmail URL:  ${previewUrl}`);
 
       return {
         success: true,
@@ -419,18 +455,19 @@ async function sendPaymentReminderEmail({ toEmail, subject, message, customerNam
         html: htmlContent,
         messageId: info.messageId,
         previewUrl: previewUrl,
-        message: `Live email dispatched to ${toEmail}! Click below to inspect the delivered email.`
+        message: `Live email dispatched to ${toEmail}! Webmail URL: ${previewUrl}`
       };
     }
   } catch (etherealErr) {
-    console.error('[ETHEREAL DISPATCH ERROR]', etherealErr.message);
+    console.error(`[ETHEREAL EXCEPTION] Message: ${etherealErr.message}\nStack: ${etherealErr.stack}`);
   }
 
   // Fallback Simulation Mode
-  console.log(`[REMINDER DISPATCH] Reminder prepared and addressed directly to customer recipient: ${toEmail} (Subject: "${subject}")`);
+  console.log(`[EMAIL PROVIDER FALLBACK] Staging mode for: ${toEmail}`);
   return {
     success: true,
     emailSent: false,
+    provider: 'Local Staging',
     toEmail,
     subject,
     html: htmlContent,
