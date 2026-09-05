@@ -1,0 +1,1578 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RECO — AI Revenue Recovery Platform</title>
+  <meta name="description" content="RECO uses AI to identify payment risks, prioritize overdue invoices, and help B2B enterprises recover outstanding revenue faster.">
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,600;0,700;0,800;1,600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <!-- Master Stylesheet -->
+  <link rel="stylesheet" href="/css/style.css">
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%2325344F'/%3E%3Ctext x='50' y='68' font-size='56' font-weight='bold' text-anchor='middle' fill='%23D5B893' font-family='sans-serif'%3ER%3C/text%3E%3C/svg%3E">
+</head>
+<body>
+
+  <!-- ========================================================================
+       1. LANDING PAGE VIEW (Standalone Luxury Hero & Showcase)
+       ======================================================================== -->
+  <div id="view-landing" class="landing-view-wrap">
+    <!-- Landing Navigation Header -->
+    <header class="landing-header">
+      <a href="#landing" class="reco-logo">
+        <div class="reco-logo-mark">R</div>
+        <div class="reco-logo-text">RECO<span>.</span></div>
+      </a>
+
+      <nav class="landing-nav-links">
+        <a href="#landing">Home</a>
+        <a href="#dashboard" data-nav="dashboard">Command Center</a>
+        <a href="#copilot" data-nav="copilot">AI Copilot</a>
+        <a href="#reports" data-nav="reports">Analytics</a>
+      </nav>
+
+      <div style="display: flex; gap: 12px; align-items: center;">
+        <a href="#login" class="btn btn-ghost btn-sm" data-nav="login">Sign In</a>
+        <a href="#dashboard" class="btn btn-primary btn-sm" data-nav="dashboard">Explore Platform →</a>
+      </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero-section">
+      <div class="hero-badge">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z"/></svg>
+        <span>Next-Generation B2B Revenue Intelligence</span>
+      </div>
+
+      <h1 class="hero-title">
+        Stop Chasing Payments.<br>
+        Start <span>Recovering Revenue.</span>
+      </h1>
+
+      <p class="hero-subtitle">
+        RECO uses AI to identify payment risks, prioritize overdue invoices, and help businesses recover outstanding revenue faster.
+      </p>
+
+      <div class="hero-cta-group">
+        <a href="#dashboard" class="btn btn-primary btn-lg" data-nav="dashboard">
+          Get Started Free
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+        </a>
+        <a href="#dashboard" class="btn btn-tan btn-lg" data-nav="dashboard">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
+          Explore Dashboard
+        </a>
+      </div>
+
+      <!-- Visual Dashboard Preview -->
+      <div class="dashboard-preview-container">
+        <div class="dashboard-preview-header">
+          <div class="preview-dots">
+            <span class="preview-dot"></span>
+            <span class="preview-dot"></span>
+            <span class="preview-dot"></span>
+          </div>
+          <div style="color: var(--tan); font-size: 0.8rem; font-weight: 700; letter-spacing: 0.05em;">
+            RECO FINANCIAL COMMAND CENTER — LIVE PREVIEW
+          </div>
+          <div><span class="badge badge-tan">AI Active</span></div>
+        </div>
+
+        <div class="preview-body-mock">
+          <div class="preview-kpi-card">
+            <div class="preview-kpi-label">Total Outstanding</div>
+            <div class="preview-kpi-value">₹42.6L</div>
+          </div>
+          <div class="preview-kpi-card" style="border-color: rgba(99, 32, 36, 0.5);">
+            <div class="preview-kpi-label" style="color: #FFA4A9;">Revenue At Risk</div>
+            <div class="preview-kpi-value">₹12.4L</div>
+          </div>
+          <div class="preview-kpi-card">
+            <div class="preview-kpi-label">Overdue Invoices</div>
+            <div class="preview-kpi-value">87</div>
+          </div>
+          <div class="preview-kpi-card">
+            <div class="preview-kpi-label">Recovered This Month</div>
+            <div class="preview-kpi-value" style="color: var(--tan);">₹8.2L</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="features-section">
+      <div class="section-title-wrap">
+        <div class="section-label">Intelligent Automation</div>
+        <h2 class="section-title">Your Revenue, Under Control.</h2>
+        <p style="color: var(--slate-gray); margin-top: 10px;">
+          Eliminate cash flow leakages with proactive risk scoring and automated recovery workflows.
+        </p>
+      </div>
+
+      <div class="feature-cards-grid">
+        <div class="feature-card">
+          <div class="feature-icon-box">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          </div>
+          <h3>AI Risk Detection</h3>
+          <p>
+            Automatically identify invoices and customers at high risk of delayed payment before due dates occur.
+          </p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon-box">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7zm3 16h14"/></svg>
+          </div>
+          <h3>Smart Prioritization</h3>
+          <p>
+            Know which customers require attention first based on exposure, probability, and historical delay factors.
+          </p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon-box">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          </div>
+          <h3>AI Copilot Intelligence</h3>
+          <p>
+            Engage with a conversational intelligence assistant to evaluate debtor behavior, overdue exposure, and collection strategies.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Impressive Statistics Banner -->
+    <section class="stats-banner-section">
+      <div class="stats-grid">
+        <div class="stat-item">
+          <div class="stat-num">₹42.6L</div>
+          <div class="stat-label">Total Outstanding</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-num" style="color: #FFA4A9;">₹12.4L</div>
+          <div class="stat-label">Revenue At Risk</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-num">87</div>
+          <div class="stat-label">Overdue Invoices</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-num" style="color: var(--tan);">₹8.2L</div>
+          <div class="stat-label">Recovered This Month</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Footer for Landing Page -->
+    <footer style="background: var(--space-cadet-dark); color: #CAD5E2; padding: 40px 24px; text-align: center; border-top: 1px solid rgba(213, 184, 147, 0.15);">
+      <div class="reco-logo on-dark" style="justify-content: center; margin-bottom: 12px;">
+        <div class="reco-logo-mark">R</div>
+        <div class="reco-logo-text">RECO<span>.</span></div>
+      </div>
+      <p style="font-size: 0.9rem; color: var(--tan);">"Recover Revenue. Smarter."</p>
+      <p style="font-size: 0.8rem; color: var(--slate-gray); margin-top: 16px;">
+        © 2026 RECO AI Platforms Inc. Designed for enterprise B2B financial optimization.
+      </p>
+    </footer>
+  </div>
+
+  <!-- ========================================================================
+       APPLICATION SHELL (Sidebar + Topbar + View Router Container)
+       ======================================================================== -->
+  <div id="app-shell-container" class="app-container" style="display: none;">
+
+    <!-- APP SIDEBAR NAVIGATION -->
+    <aside id="app-sidebar" class="app-sidebar">
+      <div class="sidebar-header">
+        <a href="#dashboard" class="reco-logo on-dark" data-nav="dashboard">
+          <div class="reco-logo-mark">R</div>
+          <div class="reco-logo-text">RECO<span>.</span></div>
+        </a>
+        <div style="font-size: 0.72rem; color: var(--tan); margin-top: 4px; letter-spacing: 0.05em;">
+          Recover Revenue. Smarter.
+        </div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <div class="nav-section-label">Core Platform</div>
+
+        <a href="#dashboard" class="nav-item" data-view="dashboard" data-nav="dashboard">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>
+          Dashboard
+        </a>
+
+        <a href="#invoices" class="nav-item" data-view="invoices" data-nav="invoices">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+          Invoices
+        </a>
+
+        <a href="#customers" class="nav-item" data-view="customers" data-nav="customers">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          Customers
+        </a>
+
+        <div class="nav-section-label">AI Intelligence</div>
+
+        <a href="#copilot" class="nav-item" data-view="copilot" data-nav="copilot">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z"/></svg>
+          AI Copilot
+        </a>
+
+        <a href="#reports" class="nav-item" data-view="reports" data-nav="reports">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+          Reports
+        </a>
+
+        <div class="nav-section-label">Management</div>
+
+        <a href="#notifications" class="nav-item" data-view="notifications" data-nav="notifications">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+          Notifications
+          <span id="sidebar-notification-badge" class="nav-badge" style="background: var(--tan); color: var(--space-cadet);">4</span>
+        </a>
+
+        <a href="#settings" class="nav-item" data-view="settings" data-nav="settings">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+          Settings
+        </a>
+      </nav>
+
+      <!-- Sidebar User Profile Footer -->
+      <div class="sidebar-footer">
+        <div class="user-profile-widget" data-nav="settings">
+          <div class="user-avatar user-avatar-display">VM</div>
+          <div class="user-info">
+            <div class="user-name user-name-display">Vikram Malhotra</div>
+            <div class="user-role user-role-display">Head of Collections</div>
+          </div>
+          <button class="logout-trigger-btn" title="Logout" style="color: var(--tan); padding: 4px;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- MAIN APPLICATION WRAPPER -->
+    <main class="app-main">
+      <!-- Topbar Header -->
+      <header class="app-topbar">
+        <div class="topbar-left">
+          <button id="sidebar-toggle-btn" class="sidebar-toggle-btn" aria-label="Toggle Menu">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+          </button>
+          <div class="page-breadcrumb">
+            <span>RECO</span>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg>
+            <strong id="topbar-page-title">Dashboard</strong>
+          </div>
+          <div id="demo-mode-topbar-badge" class="badge badge-tan demo-topbar-indicator" style="display: none; align-items: center; gap: 6px; padding: 4px 12px; font-size: 0.74rem; font-weight: 700; letter-spacing: 0.04em; margin-left: 12px;">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <span>DEMO WORKSPACE · SAMPLE DATA</span>
+          </div>
+        </div>
+
+        <div class="topbar-right">
+          <div class="topbar-ai-pill">
+            <span class="pulse-dot"></span>
+            <span>AI Risk Engine: Active</span>
+          </div>
+
+          <a href="#notifications" class="btn btn-icon btn-secondary" title="Notifications" data-nav="notifications">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+          </a>
+
+          <a href="#landing" class="btn btn-sm btn-secondary" data-nav="landing">
+            Exit to Home
+          </a>
+        </div>
+      </header>
+
+      <!-- VIEW CONTAINER -->
+      <div class="view-content">
+
+        <!-- ====================================================================
+             2. LOGIN / AUTH VIEW
+             ==================================================================== -->
+        <section id="view-login" class="app-view">
+          <div class="auth-page-container">
+            <div class="auth-card">
+              <div class="auth-card-header">
+                <div class="reco-logo" style="justify-content: center;">
+                  <div class="reco-logo-mark">R</div>
+                  <div class="reco-logo-text">RECO<span>.</span></div>
+                </div>
+                <h2>Access Command Center</h2>
+                <p>Sign in to your revenue recovery platform</p>
+              </div>
+
+              <div class="auth-tabs">
+                <button id="auth-tab-login" class="auth-tab-btn active">Sign In</button>
+                <button id="auth-tab-signup" class="auth-tab-btn">Create Account</button>
+              </div>
+
+              <!-- Sign In Form -->
+              <form id="login-form">
+                <div class="form-group">
+                  <label class="form-label">Email</label>
+                  <input type="email" id="login-email" class="form-control" placeholder="name@company.com" required>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">Password</label>
+                  <input type="password" id="login-password" class="form-control" placeholder="••••••••" required>
+                </div>
+
+                <div class="auth-options">
+                  <label class="remember-me">
+                    <input type="checkbox" checked>
+                    <span>Remember this session</span>
+                  </label>
+                  <a href="javascript:void(0)" class="forgot-password-link" onclick="alert('Password reset link has been dispatched to your corporate email.')">Forgot password?</a>
+                </div>
+
+                <button type="submit" class="btn btn-primary" style="width: 100%; padding: 12px; font-weight: 700;">
+                  Sign In
+                </button>
+
+                <!-- Separated Option: Explore Demo Workspace -->
+                <div class="demo-workspace-divider">
+                  <span>OR</span>
+                </div>
+
+                <div class="demo-workspace-card">
+                  <div class="demo-workspace-header">
+                    <span class="demo-workspace-tag">Interactive Preview</span>
+                    <h4 class="demo-workspace-title">Want to explore RECO first?</h4>
+                    <p class="demo-workspace-desc">
+                      Tour a pre-populated Demo Workspace with realistic debtors (ABC Constructions, XYZ Pvt Ltd, etc.), live receivables, AI risk scoring, and recovery reports.
+                    </p>
+                  </div>
+                  <button type="button" id="btn-explore-demo-workspace" class="btn btn-tan demo-explore-btn">
+                    <span>Explore Demo Workspace &rarr;</span>
+                  </button>
+                </div>
+              </form>
+
+              <!-- Sign Up Form (Initially hidden) -->
+              <form id="signup-form" style="display: none;">
+                <div class="form-group">
+                  <label class="form-label">Full Name</label>
+                  <input type="text" id="signup-name" class="form-control" placeholder="e.g. Vikram Malhotra" required>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">Corporate Email</label>
+                  <input type="email" id="signup-email" class="form-control" placeholder="name@company.com" required>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">Company / Enterprise Name</label>
+                  <input type="text" id="signup-company" class="form-control" placeholder="e.g. Apex Dynamics Ltd" required>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">Set Password (min 6 chars)</label>
+                  <input type="password" id="signup-password" class="form-control" placeholder="••••••••" minlength="6" required>
+                </div>
+
+                <button type="submit" class="btn btn-primary" style="width: 100%; padding: 12px; margin-top: 10px; font-weight: 700;">
+                  CREATE ENTERPRISE ACCOUNT
+                </button>
+              </form>
+            </div>
+          </div>
+        </section>
+
+        <!-- ====================================================================
+             3. DASHBOARD VIEW
+             ==================================================================== -->
+        <section id="view-dashboard" class="app-view">
+          <!-- Demo Notice Banner (Shown only in Demo Workspace) -->
+          <div id="demo-workspace-banner" class="demo-workspace-banner" style="display: none;">
+            <div class="demo-banner-content">
+              <span class="badge badge-tan" style="font-size: 0.72rem; padding: 3px 8px;">SAMPLE DATA</span>
+              <span><strong>Demo Workspace:</strong> You are exploring a demonstration environment populated with realistic sample debtors and recovery scenarios.</span>
+            </div>
+            <div class="demo-banner-actions">
+              <a href="#login" class="btn btn-sm btn-secondary logout-trigger-btn" style="padding: 4px 12px; font-size: 0.78rem;">Exit Demo Workspace</a>
+            </div>
+          </div>
+
+          <div class="dashboard-header-greeting">
+            <div>
+              <h1 class="dashboard-greeting-title">Good morning, <span class="user-name-display">Vikram</span> 👋</h1>
+              <p class="dashboard-greeting-subtitle">Here's your revenue situation today.</p>
+            </div>
+            <div style="display: flex; gap: 10px;">
+              <button id="btn-view-ai-analysis" class="btn btn-tan">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z"/></svg>
+                View AI Analysis
+              </button>
+              <button class="btn btn-primary" data-nav="invoices">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                Manage Invoices
+              </button>
+            </div>
+          </div>
+
+          <!-- Top 4 KPI Cards -->
+          <div class="kpi-grid">
+            <div class="kpi-card">
+              <div class="kpi-top-row">
+                <span class="kpi-label">TOTAL OUTSTANDING</span>
+                <div class="kpi-icon-pill">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+                </div>
+              </div>
+              <div id="kpi-total-outstanding" class="kpi-value">₹42.6L</div>
+              <div class="kpi-trend">
+                <span>Active uncollected receivables</span>
+              </div>
+            </div>
+
+            <div class="kpi-card kpi-risk">
+              <div class="kpi-top-row">
+                <span class="kpi-label" style="color: var(--caput-mortuum);">AT RISK</span>
+                <div class="kpi-icon-pill" style="background: var(--caput-mortuum-15); color: var(--caput-mortuum);">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                </div>
+              </div>
+              <div id="kpi-at-risk" class="kpi-value" style="color: var(--caput-mortuum);">₹12.4L</div>
+              <div class="kpi-trend negative">
+                <span>High probability of default</span>
+              </div>
+            </div>
+
+            <div class="kpi-card kpi-overdue">
+              <div class="kpi-top-row">
+                <span class="kpi-label">OVERDUE INVOICES</span>
+                <div class="kpi-icon-pill">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                </div>
+              </div>
+              <div id="kpi-overdue-count" class="kpi-value">87</div>
+              <div class="kpi-trend">
+                <span>Requiring priority action</span>
+              </div>
+            </div>
+
+            <div class="kpi-card kpi-recovered">
+              <div class="kpi-top-row">
+                <span class="kpi-label" style="color: var(--coffee-dark);">RECOVERED THIS MONTH</span>
+                <div class="kpi-icon-pill" style="background: var(--tan-15); color: var(--coffee-dark);">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                </div>
+              </div>
+              <div id="kpi-recovered-month" class="kpi-value" style="color: var(--coffee-dark);">₹8.2L</div>
+              <div class="kpi-trend positive">
+                <span>+18.4% vs last month</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Charts Row -->
+          <div class="charts-grid">
+            <div class="card">
+              <div class="card-header">
+                <div>
+                  <h3 class="card-title">Revenue Recovery Trend</h3>
+                  <div class="card-subtitle">Monthly recovered revenue vs at-risk exposure (March – August 2026)</div>
+                </div>
+                <span class="badge badge-tan">Live Data</span>
+              </div>
+              <div class="chart-container">
+                <canvas id="revenueTrendChart"></canvas>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-header">
+                <div>
+                  <h3 class="card-title">Outstanding vs Recovered</h3>
+                  <div class="card-subtitle">Portfolio distribution breakdown</div>
+                </div>
+              </div>
+              <div class="chart-container">
+                <canvas id="outstandingVsRecoveredChart"></canvas>
+              </div>
+            </div>
+          </div>
+
+          <!-- AI Revenue Copilot Insights Section -->
+          <div class="ai-copilot-banner">
+            <div class="ai-banner-header">
+              <div class="ai-banner-title">
+                <svg class="sparkle-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z"/></svg>
+                AI Revenue Copilot
+              </div>
+              <button class="btn btn-sm btn-tan" data-nav="copilot">
+                Open Full Copilot →
+              </button>
+            </div>
+
+            <p id="ai-banner-summary" class="ai-banner-summary">
+              "I analyzed 1,284 invoices and identified 37 payments that require immediate attention."
+            </p>
+
+            <div class="ai-insights-cards-grid">
+              <div class="ai-insight-card risk-alert">
+                <div class="ai-insight-card-header">
+                  <span class="ai-insight-tag">HIGH RISK</span>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                </div>
+                <h4 id="ai-high-risk-count">37 Invoices</h4>
+                <p id="ai-high-risk-amount">₹12.4L potentially at risk across delayed accounts.</p>
+              </div>
+
+              <div class="ai-insight-card">
+                <div class="ai-insight-card-header">
+                  <span class="ai-insight-tag">UPCOMING RISK</span>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20"/><path d="m17 5-5-3-5 3"/><path d="m17 19-5 3-5-3"/></svg>
+                </div>
+                <h4 id="ai-upcoming-risk-count">82 Invoices</h4>
+                <p id="ai-upcoming-risk-desc">May become overdue within 7 days based on current client payment pacing.</p>
+              </div>
+
+              <div class="ai-insight-card">
+                <div class="ai-insight-card-header">
+                  <span class="ai-insight-tag">RECOVERY OPPORTUNITY</span>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+                </div>
+                <h4 id="ai-opportunity-amount">₹6.8L Potential</h4>
+                <p id="ai-opportunity-desc">Could potentially be recovered this month by deploying targeted early discounts.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Priority Collections Table -->
+          <div class="table-card">
+            <div class="card-header" style="padding: 20px 24px; margin-bottom: 0;">
+              <div>
+                <h3 class="card-title">Priority Collections</h3>
+                <div class="card-subtitle">AI-ranked overdue accounts requiring action today</div>
+              </div>
+              <a href="#invoices" class="btn btn-sm btn-secondary" data-nav="invoices">View All Invoices →</a>
+            </div>
+
+            <div class="table-responsive">
+              <table class="custom-table">
+                <thead>
+                  <tr>
+                    <th>Customer</th>
+                    <th>Invoice</th>
+                    <th>Amount</th>
+                    <th>Due Date</th>
+                    <th>Days Overdue</th>
+                    <th>AI Risk</th>
+                    <th>Recommended Action</th>
+                  </tr>
+                </thead>
+                <tbody id="priority-collections-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- ====================================================================
+             4. INVOICES PAGE
+             ==================================================================== -->
+        <section id="view-invoices" class="app-view">
+          <div class="page-toolbar">
+            <div>
+              <h2 style="font-size: 1.6rem; font-family: var(--font-display);">Invoice Management</h2>
+              <p style="color: var(--slate-gray); font-size: 0.9rem;">Track, filter, and recover outstanding accounts.</p>
+            </div>
+            <div style="display: flex; gap: 10px;">
+              <button class="btn btn-secondary" id="btn-import-data">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                Import Data
+              </button>
+              <button class="btn btn-primary" id="btn-open-add-invoice">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                + Add Invoice
+              </button>
+            </div>
+          </div>
+
+          <div class="card" style="padding: 16px; margin-bottom: 20px;">
+            <div class="page-toolbar" style="margin-bottom: 0;">
+              <div class="toolbar-search-filter">
+                <div class="search-input-wrap">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                  <input type="text" id="invoice-search-input" class="form-control" placeholder="Search invoices or customers...">
+                </div>
+              </div>
+
+              <div class="filter-pills">
+                <button class="filter-pill-btn invoice-filter-btn active" data-filter="all">All</button>
+                <button class="filter-pill-btn invoice-filter-btn" data-filter="paid">Paid</button>
+                <button class="filter-pill-btn invoice-filter-btn" data-filter="pending">Pending</button>
+                <button class="filter-pill-btn invoice-filter-btn" data-filter="overdue">Overdue</button>
+                <button class="filter-pill-btn invoice-filter-btn" data-filter="high-risk">High Risk</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="table-card">
+            <div class="table-responsive">
+              <table class="custom-table">
+                <thead>
+                  <tr>
+                    <th>Invoice ID</th>
+                    <th>Customer</th>
+                    <th>Amount</th>
+                    <th>Issue Date</th>
+                    <th>Due Date</th>
+                    <th>Status</th>
+                    <th>Risk Score</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="invoices-table-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- ====================================================================
+             5. CUSTOMERS PAGE
+             ==================================================================== -->
+        <section id="view-customers" class="app-view">
+          <div class="page-toolbar">
+            <div>
+              <h2 style="font-size: 1.6rem; font-family: var(--font-display);">Customer Intelligence</h2>
+              <p style="color: var(--slate-gray); font-size: 0.9rem;">AI behavioral risk profiling and payment predictability.</p>
+            </div>
+            <div style="display: flex; gap: 10px; align-items: center;">
+              <div class="search-input-wrap" style="width: 280px;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <input type="text" id="customer-search-input" class="form-control" placeholder="Search customer accounts...">
+              </div>
+              <button class="btn btn-primary" id="btn-open-add-customer">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                + Add Customer
+              </button>
+            </div>
+          </div>
+
+          <div id="customers-grid-container" class="customer-cards-grid"></div>
+        </section>
+
+        <!-- ====================================================================
+             6. AI REVENUE COPILOT
+             ==================================================================== -->
+        <section id="view-copilot" class="app-view">
+          <div style="margin-bottom: 22px;">
+            <h2 style="font-size: 1.6rem; font-family: var(--font-display);">Your AI Revenue Copilot</h2>
+            <p style="color: var(--slate-gray); font-size: 0.92rem;">Ask questions about your accounts ledger, debtor risks, delayed invoices, and revenue recovery strategy.</p>
+          </div>
+
+          <div class="copilot-layout-grid">
+            <!-- Full Width AI Chatbot Interface -->
+            <div class="copilot-chat-container">
+              <div class="copilot-chat-header">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                  <div class="reco-logo-mark" style="width: 32px; height: 32px; font-size: 0.9rem;">R</div>
+                  <div>
+                    <strong style="font-size: 1rem;">RECO Intelligence Engine</strong>
+                    <div style="font-size: 0.75rem; color: var(--tan);">Connected to Active Financial Ledger & Risk Models</div>
+                  </div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <span class="badge badge-tan">AI Model Online</span>
+                </div>
+              </div>
+
+              <div id="copilot-chat-messages" class="copilot-chat-messages">
+                <div class="chat-bubble ai">
+                  Hello <span class="user-name-display">Vikram</span> 👋 I'm your RECO Revenue Copilot. I've continuously audited your accounts book and analyzed high-risk invoices requiring attention.<br><br>
+                  How would you like to proceed? You can click a quick question below or ask anything about cash flow, specific debtors, or overdue invoices.
+                </div>
+              </div>
+
+              <!-- Quick Prompt Chips -->
+              <div class="chat-prompt-chips">
+                <button class="prompt-chip" data-prompt="Which customers should I follow up with today?">
+                  ⚡ Follow up today?
+                </button>
+                <button class="prompt-chip" data-prompt="Which invoices are most likely to become overdue?">
+                  ⏳ Likely overdue?
+                </button>
+                <button class="prompt-chip" data-prompt="How much revenue is currently at risk?">
+                  ⚠️ Revenue at risk?
+                </button>
+                <button class="prompt-chip" data-prompt="Which customers have the worst payment behavior?">
+                  📊 Payment delay behavior?
+                </button>
+                <button class="prompt-chip" data-prompt="Give me a full executive cashflow audit.">
+                  📈 Executive cashflow audit
+                </button>
+              </div>
+
+              <form id="copilot-chat-form" class="copilot-chat-input-bar">
+                <input type="text" id="copilot-chat-input" class="form-control" placeholder="Ask RECO about collections, debtor behavior, cashflow, or risk scores..." required>
+                <button type="submit" class="btn btn-primary btn-icon" title="Send Message">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                </button>
+              </form>
+            </div>
+          </div>
+        </section>
+
+        <!-- ====================================================================
+             7. REVENUE RECOVERY SIMULATOR
+             ==================================================================== -->
+        <section id="view-simulator" class="app-view">
+          <div style="margin-bottom: 24px;">
+            <h2 style="font-size: 1.6rem; font-family: var(--font-display);">Recovery Simulator</h2>
+            <p style="color: var(--slate-gray); font-size: 0.92rem;">See how different recovery strategies could impact your revenue.</p>
+          </div>
+
+          <div class="simulator-grid">
+            <!-- Controls -->
+            <div class="simulator-controls-card">
+              <h3 style="font-size: 1.2rem; margin-bottom: 18px; color: var(--space-cadet);">Baseline Financials</h3>
+              
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 24px;">
+                <div style="background: var(--bg-cream-soft); padding: 14px; border-radius: 8px;">
+                  <div style="font-size: 0.76rem; color: var(--slate-gray); text-transform: uppercase; font-weight: 700;">Current Outstanding</div>
+                  <div id="sim-baseline-outstanding" class="sim-outstanding-stat" style="font-size: 1.5rem; font-weight: 800; color: var(--space-cadet);">₹0.0L</div>
+                </div>
+                <div style="background: var(--bg-cream-soft); padding: 14px; border-radius: 8px;">
+                  <div style="font-size: 0.76rem; color: var(--slate-gray); text-transform: uppercase; font-weight: 700;">Current Recovery Rate</div>
+                  <div id="sim-baseline-rate" style="font-size: 1.5rem; font-weight: 800; color: var(--coffee);">0%</div>
+                </div>
+              </div>
+
+              <!-- Interactive Slider -->
+              <div class="slider-container">
+                <div class="slider-header">
+                  <span style="font-weight: 700; color: var(--space-cadet);">Recovery Target:</span>
+                  <span id="sim-target-display" class="slider-target-val">85%</span>
+                </div>
+                <input type="range" id="recovery-target-slider" class="custom-range-slider" min="50" max="100" value="85" step="1">
+                <div style="display: flex; justify-content: space-between; font-size: 0.78rem; color: var(--slate-gray); margin-top: 6px;">
+                  <span>50% (Conservative)</span>
+                  <span>75%</span>
+                  <span>100% (Aggressive AI)</span>
+                </div>
+              </div>
+
+              <!-- Strategy Toggles -->
+              <div style="margin-top: 24px;">
+                <div style="font-size: 0.85rem; font-weight: 700; color: var(--space-cadet); margin-bottom: 12px;">Active Recovery Levers:</div>
+                <div style="display: flex; flex-direction: column; gap: 10px;">
+                  <label style="display: flex; align-items: center; gap: 10px; font-size: 0.88rem; color: var(--space-cadet);">
+                    <input type="checkbox" checked>
+                    <span>Autonomous WhatsApp Nudges (48h Pre-Due)</span>
+                  </label>
+                  <label style="display: flex; align-items: center; gap: 10px; font-size: 0.88rem; color: var(--space-cadet);">
+                    <input type="checkbox" checked>
+                    <span>Dynamic 2% Prompt Payment Incentive Algorithm</span>
+                  </label>
+                  <label style="display: flex; align-items: center; gap: 10px; font-size: 0.88rem; color: var(--space-cadet);">
+                    <input type="checkbox" checked>
+                    <span>Automated CFO Escalation Workflow (10d Overdue)</span>
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <!-- Dynamic Projection Results -->
+            <div class="simulator-results-card">
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span class="badge badge-tan">AI Revenue Model</span>
+                <span style="font-size: 0.82rem; color: var(--tan);">Real-time Projection</span>
+              </div>
+
+              <div style="margin-top: 20px;">
+                <div style="font-size: 0.85rem; text-transform: uppercase; color: #CAD5E2; letter-spacing: 0.05em;">Projected Recovery</div>
+                <div id="sim-projected-value" class="sim-metric-big">₹0.0L</div>
+              </div>
+
+              <!-- Visual Progress Gauge -->
+              <div style="margin: 18px 0;">
+                <div style="display: flex; justify-content: space-between; font-size: 0.8rem; color: #CAD5E2; margin-bottom: 6px;">
+                  <span>Recovery Efficiency</span>
+                  <span>Target Fulfillment</span>
+                </div>
+                <div style="height: 10px; background: rgba(255, 255, 255, 0.15); border-radius: 5px; overflow: hidden;">
+                  <div id="sim-progress-bar" style="height: 100%; width: 85%; background: var(--tan); border-radius: 5px; transition: width 0.3s ease;"></div>
+                </div>
+              </div>
+
+              <div class="sim-breakdown-row">
+                <div class="sim-stat">
+                  <label>Current Recovery</label>
+                  <span id="sim-current-recovered">₹0.0L</span>
+                </div>
+                <div class="sim-stat">
+                  <label>Potential Additional</label>
+                  <span id="sim-additional-value" style="color: var(--tan);">+₹0.0L</span>
+                </div>
+              </div>
+
+              <div style="display: flex; justify-content: space-between; align-items: center; padding-top: 10px;">
+                <div>
+                  <div style="font-size: 0.78rem; color: #CAD5E2;">Unrecovered Amount</div>
+                  <strong id="sim-unrecovered-value" style="font-size: 1.1rem; color: #FFA4A9;">₹0.0L</strong>
+                </div>
+                <button id="btn-apply-strategy" class="btn btn-tan">
+                  Apply Strategy
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ====================================================================
+             8. REPORTS VIEW
+             ==================================================================== -->
+        <section id="view-reports" class="app-view">
+          <div class="page-toolbar">
+            <div>
+              <h2 style="font-size: 1.6rem; font-family: var(--font-display);">Recovery & Audit Reports</h2>
+              <p style="color: var(--slate-gray); font-size: 0.9rem;">Comprehensive portfolio performance and debtor behavior metrics.</p>
+            </div>
+            <div style="display: flex; gap: 10px;">
+              <button id="btn-print-reports" class="btn btn-secondary">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect width="12" height="8" x="6" y="14"/></svg>
+                Print Summary
+              </button>
+              <button id="btn-export-report" class="btn btn-primary">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                Export Report (CSV)
+              </button>
+            </div>
+          </div>
+
+          <div class="reports-kpi-summary">
+            <div class="kpi-card">
+              <div class="kpi-label">Avg Recovery Cycle</div>
+              <div id="rep-kpi-cycle" class="kpi-value" style="font-size: 1.6rem;">14.2 Days</div>
+              <div class="kpi-trend positive">Portfolio baseline</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-label">Automated Reminder ROI</div>
+              <div id="rep-kpi-roi" class="kpi-value" style="font-size: 1.6rem; color: var(--tan-dark);">84.6%</div>
+              <div class="kpi-trend">Settled within 48 hours</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-label">High-Risk Exposure</div>
+              <div id="rep-kpi-exposure" class="kpi-value" style="font-size: 1.6rem; color: var(--caput-mortuum);">29.1%</div>
+              <div class="kpi-trend negative">Of total receivables</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-label">DSO (Days Sales Out)</div>
+              <div id="rep-kpi-dso" class="kpi-value" style="font-size: 1.6rem;">38 Days</div>
+              <div class="kpi-trend positive">Operating turnaround</div>
+            </div>
+          </div>
+
+          <div class="reports-charts-grid">
+            <div class="card">
+              <div class="card-header">
+                <h3 class="card-title">Overdue Aging Buckets</h3>
+                <span class="badge badge-tan">Aging Distribution</span>
+              </div>
+              <div class="chart-container">
+                <canvas id="agingBucketChart"></canvas>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-header">
+                <h3 class="card-title">Recovery Channel Performance</h3>
+                <span class="badge badge-tan">Success Rate</span>
+              </div>
+              <div class="chart-container">
+                <canvas id="recoveryChannelChart"></canvas>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ====================================================================
+             9. NOTIFICATIONS VIEW
+             ==================================================================== -->
+        <section id="view-notifications" class="app-view">
+          <div class="page-toolbar">
+            <div>
+              <h2 style="font-size: 1.6rem; font-family: var(--font-display);">Notification Center</h2>
+              <p style="color: var(--slate-gray); font-size: 0.9rem;">Real-time risk warnings, AI detections, and recovery confirmations.</p>
+            </div>
+            <div style="display: flex; gap: 10px;">
+              <button id="btn-mark-all-read" class="btn btn-secondary btn-sm">
+                Mark all as read
+              </button>
+            </div>
+          </div>
+
+          <div class="card" style="padding: 12px; margin-bottom: 20px;">
+            <div class="filter-pills" style="border: none; background: transparent;">
+              <button class="filter-pill-btn notif-filter-btn active" data-filter="all">All</button>
+              <button class="filter-pill-btn notif-filter-btn" data-filter="critical">High Priority</button>
+              <button class="filter-pill-btn notif-filter-btn" data-filter="ai-insight">AI Insights</button>
+              <button class="filter-pill-btn notif-filter-btn" data-filter="recovery">Recoveries</button>
+            </div>
+          </div>
+
+          <div id="notifications-list-wrap" class="notification-list"></div>
+        </section>
+
+        <!-- ====================================================================
+             10. SETTINGS VIEW
+             ==================================================================== -->
+        <section id="view-settings" class="app-view">
+          <div style="margin-bottom: 24px;">
+            <h2 style="font-size: 1.6rem; font-family: var(--font-display);">Platform Settings</h2>
+            <p style="color: var(--slate-gray); font-size: 0.9rem;">Configure organization profile, AI thresholds, and communication templates.</p>
+          </div>
+
+          <div class="settings-grid">
+            <!-- Settings Navigation -->
+            <div class="settings-nav">
+              <button class="settings-nav-btn active" data-section="profile">Company Profile</button>
+              <button class="settings-nav-btn" data-section="notifications">Notification Preferences</button>
+              <button class="settings-nav-btn" data-section="ai">AI Risk Preferences</button>
+              <button class="settings-nav-btn logout-trigger-btn" style="color: var(--caput-mortuum); margin-top: 20px;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:inline; vertical-align:middle; margin-right:6px;"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                Sign Out / Logout
+              </button>
+            </div>
+
+            <!-- Settings Content -->
+            <div class="card">
+              <form id="platform-settings-form">
+                <h3 style="font-size: 1.2rem; margin-bottom: 18px; color: var(--space-cadet);">Company Profile</h3>
+
+                <div class="form-group">
+                  <label class="form-label">Enterprise Entity Name</label>
+                  <input type="text" id="settings-company-name" class="form-control" value="Apex Enterprise Solutions Pvt. Ltd.">
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                  <div class="form-group">
+                    <label class="form-label">GSTIN / Tax ID</label>
+                    <input type="text" id="settings-gstin" class="form-control" value="27AAACA1234F1Z8">
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Default Currency</label>
+                    <select id="settings-currency" class="form-control">
+                      <option value="INR" selected>INR (₹) — Indian Rupee</option>
+                      <option value="USD">USD ($) — US Dollar</option>
+                      <option value="EUR">EUR (€) — Euro</option>
+                    </select>
+                  </div>
+                </div>
+
+                <hr style="margin: 24px 0; border: none; border-top: 1px solid var(--border-light);">
+
+                <h3 style="font-size: 1.2rem; margin-bottom: 18px; color: var(--space-cadet);">AI Risk Sensitivity</h3>
+
+                <div class="form-group">
+                  <label class="form-label">Risk Threshold for Critical Alert Trigger</label>
+                  <select id="settings-risk-threshold" class="form-control">
+                    <option value="80" selected>High (Score > 80) — Recommended</option>
+                    <option value="65">Moderate (Score > 65)</option>
+                    <option value="50">Strict (Score > 50)</option>
+                  </select>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">Autonomous Action Autopilot</label>
+                  <label style="display: flex; align-items: center; gap: 8px; font-size: 0.9rem; margin-top: 6px;">
+                    <input type="checkbox" id="settings-auto-nudge" checked>
+                    <span>Allow RECO AI to dispatch gentle payment nudges automatically 48 hours before due date.</span>
+                  </label>
+                </div>
+
+                <hr style="margin: 24px 0; border: none; border-top: 1px solid var(--border-light);">
+
+                <!-- Live Email Dispatch Service Configuration -->
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+                  <div>
+                    <h3 style="font-size: 1.2rem; margin-bottom: 4px; color: var(--space-cadet);">Live Email Dispatch Service</h3>
+                    <p style="font-size: 0.85rem; color: var(--slate-gray); margin: 0;">Connect your Resend API Key or custom SMTP to send real emails to customer & personal inboxes.</p>
+                  </div>
+                  <span id="email-service-status-badge" class="badge badge-caput">Configuration Needed</span>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label" style="display: flex; justify-content: space-between; align-items: center;">
+                    <span>Resend API Key (Recommended - Instant & Free at resend.com):</span>
+                    <a href="https://resend.com/api-keys" target="_blank" rel="noopener noreferrer" style="font-size: 0.78rem; color: var(--space-cadet); text-decoration: underline; font-weight: 600;">Get Free Key from resend.com ↗</a>
+                  </label>
+                  <input type="password" id="settings-resend-key" class="form-control" placeholder="re_123456789..." style="font-family: monospace; font-size: 0.85rem;">
+                  <small style="color: var(--slate-gray); font-size: 0.75rem; display: block; margin-top: 4px;">Enter your key starting with <code>re_</code>. It will be saved securely to your backend environment.</small>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">Sender Email / Name (From Header):</label>
+                  <input type="text" id="settings-email-from" class="form-control" placeholder="RECO Onboarding <onboarding@resend.dev>" style="font-size: 0.85rem;">
+                </div>
+
+                <details style="margin: 16px 0; background: #FAF8F5; padding: 14px 16px; border-radius: 10px; border: 1px solid rgba(213, 184, 147, 0.4);">
+                  <summary style="font-size: 0.85rem; font-weight: 700; color: var(--space-cadet); cursor: pointer; display: flex; align-items: center; justify-content: space-between;">
+                    <span>⚡ Or Configure Direct Gmail / Custom SMTP (Free Alternative)</span>
+                    <span style="font-size: 0.72rem; color: var(--tan); text-decoration: underline;">Configure SMTP ▾</span>
+                  </summary>
+                  <div style="margin-top: 14px; display: grid; grid-template-columns: 2fr 1fr; gap: 12px;">
+                    <div class="form-group" style="margin-bottom: 8px;">
+                      <label class="form-label" style="font-size: 0.78rem;">SMTP Host</label>
+                      <input type="text" id="settings-smtp-host" class="form-control" placeholder="smtp.gmail.com" style="font-size: 0.82rem;">
+                    </div>
+                    <div class="form-group" style="margin-bottom: 8px;">
+                      <label class="form-label" style="font-size: 0.78rem;">Port</label>
+                      <input type="text" id="settings-smtp-port" class="form-control" placeholder="465" style="font-size: 0.82rem;">
+                    </div>
+                  </div>
+                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 6px;">
+                    <div class="form-group" style="margin-bottom: 8px;">
+                      <label class="form-label" style="font-size: 0.78rem;">SMTP Username / Gmail Address</label>
+                      <input type="email" id="settings-smtp-user" class="form-control" placeholder="your.name@gmail.com" style="font-size: 0.82rem;">
+                    </div>
+                    <div class="form-group" style="margin-bottom: 8px;">
+                      <label class="form-label" style="font-size: 0.78rem;">Google 16-Char App Password</label>
+                      <input type="password" id="settings-smtp-pass" class="form-control" placeholder="abcd efgh ijkl mnop" style="font-size: 0.82rem;">
+                    </div>
+                  </div>
+                  <small style="color: var(--slate-gray); font-size: 0.74rem; display: block; margin-top: 4px;">For Gmail: Generate an App Password in your <a href="https://myaccount.google.com/apppasswords" target="_blank" rel="noopener noreferrer" style="color: var(--space-cadet); text-decoration: underline; font-weight: 600;">Google Account Security ↗</a></small>
+                </details>
+
+                <!-- Test Email Transmitter Box -->
+                <div style="margin-top: 16px; background: #FAF8F5; padding: 14px 18px; border-radius: 10px; border: 1px solid rgba(213, 184, 147, 0.4); display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
+                  <div>
+                    <div style="font-size: 0.88rem; font-weight: 700; color: var(--space-cadet); margin-bottom: 2px;">
+                      Test Real Inbox Transmission
+                    </div>
+                    <div style="font-size: 0.78rem; color: var(--slate-gray);">
+                      Send an instant verification email to verify physical inbox receipt.
+                    </div>
+                  </div>
+                  <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                    <input type="email" id="settings-test-email-target" class="form-control" placeholder="your.name@domain.com" style="font-size: 0.82rem; width: 220px;">
+                    <button type="button" id="btn-test-email-dispatch" class="btn btn-sm btn-secondary">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
+                      Send Test Email
+                    </button>
+                  </div>
+                </div>
+
+                <div style="margin-top: 24px; display: flex; justify-content: space-between; align-items: center;">
+                  <button type="button" id="btn-reset-app-data" class="btn btn-sm btn-ghost" style="color: var(--caput-mortuum);">
+                    Reset Demo Ledger
+                  </button>
+                  <button type="submit" class="btn btn-primary">Save Changes</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </section>
+
+      </div>
+    </main>
+  </div>
+
+  <!-- ========================================================================
+       MODALS & SLIDE-OUT DRAWERS
+       ======================================================================== -->
+
+  <!-- 1. Detailed Invoice Slide-out Drawer -->
+  <div id="invoice-drawer-backdrop" class="drawer-backdrop">
+    <div class="slide-drawer">
+      <div class="drawer-header">
+        <div>
+          <strong id="drawer-invoice-id" style="font-family: monospace; font-size: 1.1rem; color: var(--space-cadet);">INV-1024</strong>
+          <div id="drawer-customer-name" style="font-size: 0.85rem; color: var(--slate-gray);">ABC Constructions Pvt. Ltd.</div>
+        </div>
+        <button id="btn-close-invoice-drawer" class="btn btn-icon btn-ghost" aria-label="Close Drawer">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+
+      <div class="drawer-body">
+        <div style="background: var(--bg-cream-soft); padding: 18px; border-radius: 12px; margin-bottom: 20px;">
+          <div style="font-size: 0.78rem; color: var(--slate-gray); text-transform: uppercase; font-weight: 700;">Outstanding Amount</div>
+          <div id="drawer-invoice-amount" style="font-size: 2rem; font-weight: 800; color: var(--space-cadet);">₹4,80,000</div>
+          <div style="display: flex; gap: 10px; margin-top: 6px;">
+            <span id="drawer-invoice-status" class="badge badge-risk-high">Overdue</span>
+            <span id="drawer-days-overdue" class="badge badge-tan">18 days overdue</span>
+          </div>
+        </div>
+
+        <div style="margin-bottom: 20px;">
+          <div class="form-label">Due Date:</div>
+          <div id="drawer-due-date" style="font-weight: 600;">Aug 12, 2026</div>
+        </div>
+
+        <div style="background: rgba(99, 32, 36, 0.05); border: 1.5px solid var(--caput-mortuum); border-radius: 12px; padding: 18px; margin-bottom: 20px;">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+            <strong style="color: var(--caput-mortuum); font-size: 0.9rem;">AI RISK EVALUATION</strong>
+            <span id="drawer-risk-score" class="badge badge-risk-high">89% HIGH RISK</span>
+          </div>
+          <p id="drawer-ai-notes" style="font-size: 0.86rem; color: var(--space-cadet); line-height: 1.5;">
+            Payment history shows consecutive delays. High default probability without intervention.
+          </p>
+        </div>
+
+        <div style="margin-bottom: 20px;">
+          <div class="form-label">Recommended Action:</div>
+          <div id="drawer-recommended-action" style="font-weight: 700; color: var(--coffee-dark);">Send reminder</div>
+        </div>
+
+        <div style="display: flex; gap: 8px; margin-top: 24px;">
+          <button id="btn-drawer-edit-inv" class="btn btn-sm btn-secondary" style="flex: 1;">Edit Invoice</button>
+          <button id="btn-drawer-mark-paid" class="btn btn-sm btn-tan" style="flex: 1;">Mark as Paid</button>
+          <button id="btn-drawer-delete-inv" class="btn btn-sm btn-danger" style="flex: 0.7;">Delete</button>
+        </div>
+      </div>
+
+      <div class="drawer-footer">
+        <button class="btn btn-secondary" style="flex: 1;" onclick="document.getElementById('invoice-drawer-backdrop').classList.remove('active')">Dismiss</button>
+        <button class="btn btn-primary" style="flex: 1;" onclick="document.getElementById('invoice-drawer-backdrop').classList.remove('active'); window.location.hash='#copilot';">
+          Open in AI Copilot →
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. Customer Intelligence Modal -->
+  <div id="customer-modal-backdrop" class="modal-backdrop">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <div>
+          <h3 id="modal-customer-name" style="font-size: 1.25rem;">ABC Constructions Pvt. Ltd.</h3>
+          <div id="modal-customer-category" style="font-size: 0.85rem; color: var(--slate-gray);">Infrastructure & Civil</div>
+        </div>
+        <button id="btn-close-customer-modal" class="btn btn-icon btn-ghost">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; margin-bottom: 20px;">
+          <div style="background: var(--bg-cream-soft); padding: 14px; border-radius: 8px;">
+            <label style="font-size: 0.74rem; color: var(--slate-gray); text-transform: uppercase; font-weight: 700;">Total Outstanding</label>
+            <div id="modal-customer-outstanding" style="font-size: 1.4rem; font-weight: 800; color: var(--caput-mortuum);">₹4,80,000</div>
+          </div>
+          <div style="background: var(--bg-cream-soft); padding: 14px; border-radius: 8px;">
+            <label style="font-size: 0.74rem; color: var(--slate-gray); text-transform: uppercase; font-weight: 700;">AI Risk Score</label>
+            <div id="modal-customer-risk-score" style="font-size: 1.4rem; font-weight: 800; color: var(--coffee);">89/100</div>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px; text-align: center;">
+          <div style="border: 1px solid var(--border-light); padding: 10px; border-radius: 8px;">
+            <div style="font-size: 0.72rem; color: var(--slate-gray);">Paid On-Time</div>
+            <strong id="modal-customer-paid-ontime">62%</strong>
+          </div>
+          <div style="border: 1px solid var(--border-light); padding: 10px; border-radius: 8px;">
+            <div style="font-size: 0.72rem; color: var(--slate-gray);">Average Delay</div>
+            <strong id="modal-customer-avg-delay">14 days</strong>
+          </div>
+          <div style="border: 1px solid var(--border-light); padding: 10px; border-radius: 8px;">
+            <div style="font-size: 0.72rem; color: var(--slate-gray);">Total Recovered</div>
+            <strong id="modal-customer-recovered" style="color: var(--coffee);">₹18.4L</strong>
+          </div>
+        </div>
+
+        <div style="margin-bottom: 20px;">
+          <div class="form-label">Risk Score Progression (Past 6 Months):</div>
+          <div style="height: 120px; width: 100%;">
+            <canvas id="customerHistoryChart"></canvas>
+          </div>
+        </div>
+
+        <div style="background: var(--bg-cream); border: 1px solid var(--border-warm); padding: 14px; border-radius: 8px; margin-bottom: 16px;">
+          <strong style="font-size: 0.82rem; color: var(--coffee); text-transform: uppercase;">AI Behavioral Assessment:</strong>
+          <p id="modal-customer-ai-assessment" style="font-size: 0.88rem; color: var(--space-cadet); margin-top: 4px; line-height: 1.45;"></p>
+        </div>
+
+        <div style="margin-bottom: 16px;">
+          <strong style="font-size: 0.8rem; color: var(--slate-gray);">Customer's Invoices:</strong>
+          <div id="modal-customer-invoices-list" style="margin-top: 6px;"></div>
+        </div>
+
+        <div>
+          <strong style="font-size: 0.8rem; color: var(--slate-gray);">Primary Contact:</strong>
+          <div id="modal-customer-contact" style="font-size: 0.88rem; color: var(--space-cadet);"></div>
+        </div>
+      </div>
+
+      <div class="modal-footer" style="display: flex; justify-content: space-between; align-items: center; gap: 8px;">
+        <div style="display: flex; gap: 8px;">
+          <button id="btn-modal-edit-customer" class="btn btn-sm btn-secondary">Edit Customer</button>
+          <button id="btn-modal-delete-customer" class="btn btn-sm btn-danger">Delete</button>
+        </div>
+        <div style="display: flex; gap: 8px;">
+          <button id="btn-modal-close-customer" class="btn btn-secondary">Close</button>
+          <button id="btn-modal-draft-reminder" class="btn btn-primary">Ask AI Copilot →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. Add Customer Modal -->
+  <div id="add-customer-modal-backdrop" class="modal-backdrop">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 style="font-size: 1.25rem;">+ Add Customer Profile</h3>
+        <button id="btn-close-add-customer" class="btn btn-icon btn-ghost">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+
+      <form id="add-customer-form">
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label">Company / Debtor Name</label>
+            <input type="text" id="new-cust-name" class="form-control" placeholder="e.g. Apex Global Logistics" required>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Industry / Category</label>
+            <input type="text" id="new-cust-category" class="form-control" placeholder="e.g. Manufacturing, Retail Distribution">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Contact Person</label>
+            <input type="text" id="new-cust-contact" class="form-control" placeholder="e.g. Rahul Sharma (Finance Head)">
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+            <div class="form-group">
+              <label class="form-label">Finance Email</label>
+              <input type="email" id="new-cust-email" class="form-control" placeholder="accounts@company.com">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Phone Number</label>
+              <input type="tel" id="new-cust-phone" class="form-control" placeholder="+91 98765 43210">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Historical Average Payment Delay (Days)</label>
+            <input type="number" id="new-cust-avg-delay" class="form-control" value="5" min="0" max="180">
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" id="btn-cancel-add-customer">Cancel</button>
+          <button type="submit" class="btn btn-primary">Create Customer</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 4. Edit Customer Modal -->
+  <div id="edit-customer-modal-backdrop" class="modal-backdrop">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 style="font-size: 1.25rem;">Edit Customer Profile</h3>
+        <button id="btn-close-edit-customer" class="btn btn-icon btn-ghost">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+
+      <form id="edit-customer-form">
+        <input type="hidden" id="edit-cust-id">
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label">Company / Debtor Name</label>
+            <input type="text" id="edit-cust-name" class="form-control" required>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Industry / Category</label>
+            <input type="text" id="edit-cust-category" class="form-control">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Contact Person</label>
+            <input type="text" id="edit-cust-contact" class="form-control">
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+            <div class="form-group">
+              <label class="form-label">Finance Email</label>
+              <input type="email" id="edit-cust-email" class="form-control">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Phone Number</label>
+              <input type="tel" id="edit-cust-phone" class="form-control">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Historical Average Payment Delay (Days)</label>
+            <input type="number" id="edit-cust-avg-delay" class="form-control" min="0" max="180">
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" id="btn-cancel-edit-customer">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Changes</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 5. Add Invoice Modal -->
+  <div id="add-invoice-modal-backdrop" class="modal-backdrop">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 style="font-size: 1.25rem;">+ Create New Invoice</h3>
+        <button id="btn-close-add-invoice" class="btn btn-icon btn-ghost">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+
+      <form id="add-invoice-form">
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label">Customer / Company Name</label>
+            <input type="text" id="new-inv-customer" class="form-control" placeholder="e.g. ABC Constructions, Tata Motors" required>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Invoice Amount (₹ INR)</label>
+            <input type="number" id="new-inv-amount" class="form-control" placeholder="e.g. 250000" min="1" step="any" required>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Payment Due Date</label>
+            <input type="date" id="new-inv-due-date" class="form-control" required>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Initial Status</label>
+            <select id="new-inv-status" class="form-control">
+              <option value="Pending" selected>Pending</option>
+              <option value="Overdue">Overdue</option>
+              <option value="Paid">Paid</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="document.getElementById('add-invoice-modal-backdrop').classList.remove('active')">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save & Run AI Scoring</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 6. Edit Invoice Modal -->
+  <div id="edit-invoice-modal-backdrop" class="modal-backdrop">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 style="font-size: 1.25rem;">Edit Invoice</h3>
+        <button id="btn-close-edit-invoice" class="btn btn-icon btn-ghost">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+
+      <form id="edit-invoice-form">
+        <input type="hidden" id="edit-inv-id">
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label">Customer / Company Name</label>
+            <input type="text" id="edit-inv-customer" class="form-control" required>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Invoice Amount (₹ INR)</label>
+            <input type="number" id="edit-inv-amount" class="form-control" min="1" step="any" required>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Payment Due Date</label>
+            <input type="date" id="edit-inv-due-date" class="form-control" required>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Status</label>
+            <select id="edit-inv-status" class="form-control">
+              <option value="Pending">Pending</option>
+              <option value="Overdue">Overdue</option>
+              <option value="Paid">Paid</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Recommended Action</label>
+            <input type="text" id="edit-inv-action" class="form-control" placeholder="e.g. Send reminder, Call CFO">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">AI Analysis Notes</label>
+            <textarea id="edit-inv-notes" class="form-control" rows="2"></textarea>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="document.getElementById('edit-invoice-modal-backdrop').classList.remove('active')">Cancel</button>
+          <button type="submit" class="btn btn-primary">Update Invoice</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 7. AI Full Analysis Modal -->
+  <div id="ai-analysis-modal-backdrop" class="modal-backdrop">
+    <div class="modal-dialog" style="max-width: 650px;">
+      <div class="modal-header">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <div class="reco-logo-mark" style="width: 28px; height: 28px; font-size: 0.8rem;">R</div>
+          <h3 style="font-size: 1.25rem;">AI Executive Risk Analysis</h3>
+        </div>
+        <button id="btn-close-ai-analysis" class="btn btn-icon btn-ghost">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <div style="background: var(--bg-cream-soft); padding: 18px; border-radius: 10px; margin-bottom: 18px;">
+          <strong id="ai-analysis-title" style="color: var(--space-cadet); font-size: 1rem;">Portfolio AI Risk Synthesis</strong>
+          <p id="ai-analysis-subtitle" style="font-size: 0.9rem; color: var(--slate-gray); margin-top: 4px;">
+            Continuous multi-variable risk evaluation across active ledger accounts.
+          </p>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+          <div style="border-left: 4px solid var(--caput-mortuum); padding: 12px 16px; background: rgba(99, 32, 36, 0.04); border-radius: 6px;">
+            <strong style="color: var(--caput-mortuum); font-size: 0.88rem;">Key Vulnerability:</strong>
+            <p id="ai-analysis-vuln-desc" style="font-size: 0.88rem; color: var(--space-cadet); margin-top: 2px;">
+              Analyzing overdue velocity and risk concentration...
+            </p>
+          </div>
+
+          <div style="border-left: 4px solid var(--tan-dark); padding: 12px 16px; background: var(--tan-15); border-radius: 6px;">
+            <strong style="color: var(--coffee-dark); font-size: 0.88rem;">Recommended Action Plan:</strong>
+            <p id="ai-analysis-action-desc" style="font-size: 0.88rem; color: var(--space-cadet); margin-top: 2px;">
+              1. Enable automated pre-due payment reminders 48h before maturity.<br>
+              2. Offer 2% early settlement discount to high-aging accounts.<br>
+              3. Trigger executive escalation on invoices overdue by more than 14 days.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="document.getElementById('ai-analysis-modal-backdrop').classList.remove('active')">Close</button>
+        <button class="btn btn-tan" onclick="document.getElementById('ai-analysis-modal-backdrop').classList.remove('active'); window.location.hash='#copilot';">Open AI Copilot →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 8. Import Invoices & Ledger Data Modal -->
+  <div id="import-data-modal-backdrop" class="modal-backdrop">
+    <div class="modal-dialog" style="max-width: 720px;">
+      <div class="modal-header">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <div style="width: 32px; height: 32px; background: rgba(37, 52, 79, 0.1); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: var(--space-cadet);">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          </div>
+          <div>
+            <h3 style="font-size: 1.25rem; margin: 0; color: var(--space-cadet);">Import Ledger & Invoices</h3>
+            <p style="font-size: 0.8rem; color: var(--slate-gray); margin: 2px 0 0;">Ingest CSV or JSON invoice records into your workspace ledger.</p>
+          </div>
+        </div>
+        <button id="btn-close-import-modal" class="btn btn-icon btn-ghost">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <!-- Import Mode Tabs -->
+        <div style="display: flex; gap: 8px; margin-bottom: 16px; border-bottom: 1px solid var(--border-light); padding-bottom: 12px;">
+          <button type="button" id="tab-import-file" class="btn btn-sm btn-primary import-tab-btn" data-tab="file">Upload CSV / JSON</button>
+          <button type="button" id="tab-import-paste" class="btn btn-sm btn-secondary import-tab-btn" data-tab="paste">Paste Data Text</button>
+          <button type="button" id="tab-import-preset" class="btn btn-sm btn-secondary import-tab-btn" data-tab="preset">Sample Enterprise Batch</button>
+        </div>
+
+        <!-- Tab 1: File Upload -->
+        <div id="import-pane-file" class="import-pane">
+          <div id="import-dropzone" style="border: 2px dashed var(--tan-dark); background: var(--bg-cream-soft); border-radius: 10px; padding: 28px 20px; text-align: center; cursor: pointer; transition: all 0.2s ease;">
+            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="color: var(--tan-dark); margin-bottom: 8px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            <div style="font-weight: 700; color: var(--space-cadet); font-size: 0.95rem;">Click to browse or drag & drop CSV / JSON file</div>
+            <div style="font-size: 0.8rem; color: var(--slate-gray); margin-top: 4px;">Supports standard CSV with headers (Customer, Amount, DueDate, Status)</div>
+            <input type="file" id="import-file-input" accept=".csv,.json,text/csv,application/json" style="display: none;">
+          </div>
+
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 12px;">
+            <span style="font-size: 0.8rem; color: var(--slate-gray);">Need a template?</span>
+            <button type="button" id="btn-download-csv-template" class="btn btn-sm btn-ghost" style="color: var(--coffee-dark); font-weight: 600; text-decoration: underline;">
+              📥 Download Sample CSV Template
+            </button>
+          </div>
+        </div>
+
+        <!-- Tab 2: Paste Raw Data -->
+        <div id="import-pane-paste" class="import-pane" style="display: none;">
+          <div class="form-group">
+            <label class="form-label">Paste CSV or JSON records</label>
+            <textarea id="import-paste-textarea" class="form-control" rows="6" placeholder="Customer,Amount,DueDate,Status&#10;Tata Motors,450000,2026-09-20,Pending&#10;Infosys BPO,320000,2026-08-15,Overdue&#10;Apollo Health,180000,2026-09-01,Paid"></textarea>
+          </div>
+          <button type="button" id="btn-parse-paste-data" class="btn btn-sm btn-secondary">Parse Pasted Data</button>
+        </div>
+
+        <!-- Tab 3: Preset Sample Batch -->
+        <div id="import-pane-preset" class="import-pane" style="display: none;">
+          <div style="background: var(--bg-cream-soft); border-radius: 10px; padding: 16px; margin-bottom: 12px;">
+            <strong style="color: var(--space-cadet); font-size: 0.95rem;">Enterprise Demo Receivable Ledger (5 Invoices)</strong>
+            <p style="font-size: 0.85rem; color: var(--slate-gray); margin: 4px 0 10px;">
+              Loads 5 realistic corporate invoices across IT Services, Manufacturing, Healthcare, and Logistics to test AI Risk Calibration and Revenue Forecasting.
+            </p>
+            <button type="button" id="btn-load-preset-batch" class="btn btn-sm btn-tan">Load 5 Sample Invoices into Importer</button>
+          </div>
+        </div>
+
+        <!-- Live Parsed Preview Container -->
+        <div id="import-preview-wrapper" style="margin-top: 16px; display: none;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <strong id="import-preview-summary" style="font-size: 0.88rem; color: var(--space-cadet);">Detected 0 Invoices</strong>
+            <span class="badge badge-tan" id="import-preview-total">Total: ₹0.0L</span>
+          </div>
+          <div style="max-height: 180px; overflow-y: auto; border: 1px solid var(--border-light); border-radius: 8px;">
+            <table class="data-table" style="font-size: 0.82rem; margin: 0;">
+              <thead>
+                <tr>
+                  <th>Customer</th>
+                  <th>Amount</th>
+                  <th>Due Date</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="import-preview-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer" style="display: flex; justify-content: space-between; align-items: center;">
+        <button type="button" id="btn-cancel-import" class="btn btn-secondary">Cancel</button>
+        <button type="button" id="btn-submit-import" class="btn btn-primary" disabled>
+          Import Records & Run AI Scoring
+        </button>
+      </div>
+    </div>
+  </div>
+  <div id="toast-container" class="toast-container"></div>
+
+  <!-- JavaScript Application Modules -->
+  <script src="/js/store.js"></script>
+  <script src="/js/app.js"></script>
+</body>
+</html>

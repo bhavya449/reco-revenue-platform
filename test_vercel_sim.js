@@ -57,6 +57,36 @@ testServer.listen(0, async () => {
     const rootRes = await req('/');
     console.log(`✅ PASS: GET / returned HTTP ${rootRes.status}`);
 
+    // Check GET /css/style.css
+    const cssRes = await req('/css/style.css');
+    console.log(`✅ PASS: GET /css/style.css returned HTTP ${cssRes.status}`);
+    if (typeof cssRes.body === 'string' && cssRes.body.includes('--space-cadet')) {
+      console.log(`✅ PASS: GET /css/style.css returned actual CSS stylesheet content (${cssRes.body.length} bytes)`);
+    } else {
+      console.error('❌ FAIL: CSS response did not contain expected CSS rules!');
+      process.exit(1);
+    }
+
+    // Check GET /js/store.js
+    const storeRes = await req('/js/store.js');
+    console.log(`✅ PASS: GET /js/store.js returned HTTP ${storeRes.status}`);
+    if (typeof storeRes.body === 'string' && storeRes.body.includes('RecoStore')) {
+      console.log(`✅ PASS: GET /js/store.js returned store script content`);
+    } else {
+      console.error('❌ FAIL: JS store response did not contain RecoStore!');
+      process.exit(1);
+    }
+
+    // Check GET /js/app.js
+    const appRes = await req('/js/app.js');
+    console.log(`✅ PASS: GET /js/app.js returned HTTP ${appRes.status}`);
+    if (typeof appRes.body === 'string' && appRes.body.includes('uiState')) {
+      console.log(`✅ PASS: GET /js/app.js returned app script content`);
+    } else {
+      console.error('❌ FAIL: JS app response did not contain uiState!');
+      process.exit(1);
+    }
+
     // Check GET /favicon.ico
     const favRes = await req('/favicon.ico');
     console.log(`✅ PASS: GET /favicon.ico returned HTTP ${favRes.status} (No 500 error!)`);

@@ -98,8 +98,58 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Serve static frontend assets
+// Serve static frontend assets from public/ and root directory
+app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.static(path.join(__dirname)));
+
+// Explicit CSS and JS asset routes with exact MIME types to prevent any fallback MIME-type rejection
+app.get('/css/style.css', (req, res) => {
+  res.setHeader('Content-Type', 'text/css; charset=UTF-8');
+  const candidatePaths = [
+    path.join(__dirname, 'public', 'css', 'style.css'),
+    path.join(__dirname, 'css', 'style.css'),
+    path.join(__dirname, '..', 'public', 'css', 'style.css'),
+    path.join(__dirname, '..', 'css', 'style.css')
+  ];
+  for (const p of candidatePaths) {
+    if (fs.existsSync(p)) {
+      return res.sendFile(p);
+    }
+  }
+  return res.status(404).send('/* CSS stylesheet not found */');
+});
+
+app.get('/js/store.js', (req, res) => {
+  res.setHeader('Content-Type', 'application/javascript; charset=UTF-8');
+  const candidatePaths = [
+    path.join(__dirname, 'public', 'js', 'store.js'),
+    path.join(__dirname, 'js', 'store.js'),
+    path.join(__dirname, '..', 'public', 'js', 'store.js'),
+    path.join(__dirname, '..', 'js', 'store.js')
+  ];
+  for (const p of candidatePaths) {
+    if (fs.existsSync(p)) {
+      return res.sendFile(p);
+    }
+  }
+  return res.status(404).send('/* store.js not found */');
+});
+
+app.get('/js/app.js', (req, res) => {
+  res.setHeader('Content-Type', 'application/javascript; charset=UTF-8');
+  const candidatePaths = [
+    path.join(__dirname, 'public', 'js', 'app.js'),
+    path.join(__dirname, 'js', 'app.js'),
+    path.join(__dirname, '..', 'public', 'js', 'app.js'),
+    path.join(__dirname, '..', 'js', 'app.js')
+  ];
+  for (const p of candidatePaths) {
+    if (fs.existsSync(p)) {
+      return res.sendFile(p);
+    }
+  }
+  return res.status(404).send('/* app.js not found */');
+});
 
 /* ==========================================================================
    API Authentication Routes
