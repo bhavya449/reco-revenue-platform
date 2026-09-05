@@ -40,7 +40,7 @@
 
       <div style="display: flex; gap: 12px; align-items: center;">
         <a href="#login" class="btn btn-ghost btn-sm" data-nav="login">Sign In</a>
-        <a href="#dashboard" class="btn btn-primary btn-sm" data-nav="dashboard">Explore Platform →</a>
+        <a href="#login" class="btn btn-primary btn-sm" data-nav="login">Explore Platform →</a>
       </div>
     </header>
 
@@ -61,11 +61,11 @@
       </p>
 
       <div class="hero-cta-group">
-        <a href="#dashboard" class="btn btn-primary btn-lg" data-nav="dashboard">
+        <a href="#signup" class="btn btn-primary btn-lg" id="landing-get-started" data-nav="login">
           Get Started Free
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
         </a>
-        <a href="#dashboard" class="btn btn-tan btn-lg" data-nav="dashboard">
+        <a href="#login" class="btn btn-tan btn-lg" data-nav="login">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
           Explore Dashboard
         </a>
@@ -241,7 +241,7 @@
         <a href="#notifications" class="nav-item" data-view="notifications" data-nav="notifications">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
           Notifications
-          <span id="sidebar-notification-badge" class="nav-badge" style="background: var(--tan); color: var(--space-cadet);">4</span>
+          <span id="sidebar-notification-badge" class="nav-badge" style="background: var(--tan); color: var(--space-cadet); display:none;">0</span>
         </a>
 
         <a href="#settings" class="nav-item" data-view="settings" data-nav="settings">
@@ -253,10 +253,10 @@
       <!-- Sidebar User Profile Footer -->
       <div class="sidebar-footer">
         <div class="user-profile-widget" data-nav="settings">
-          <div class="user-avatar user-avatar-display">VM</div>
+          <div class="user-avatar user-avatar-display">—</div>
           <div class="user-info">
-            <div class="user-name user-name-display">Vikram Malhotra</div>
-            <div class="user-role user-role-display">Head of Collections</div>
+            <div class="user-name user-name-display">Signed in user</div>
+            <div class="user-role user-role-display">Workspace</div>
           </div>
           <button class="logout-trigger-btn" title="Logout" style="color: var(--tan); padding: 4px;">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
@@ -264,6 +264,7 @@
         </div>
       </div>
     </aside>
+    <div id="sidebar-overlay" class="sidebar-overlay"></div>
 
     <!-- MAIN APPLICATION WRAPPER -->
     <main class="app-main">
@@ -323,20 +324,20 @@
               <form id="login-form">
                 <div class="form-group">
                   <label class="form-label">Work Email Address</label>
-                  <input type="email" id="login-email" class="form-control" value="vikram@apexenterprise.com" required>
+                  <input type="email" id="login-email" class="form-control" placeholder="name@company.com" autocomplete="username" required>
                 </div>
 
                 <div class="form-group">
                   <label class="form-label">Password</label>
-                  <input type="password" id="login-password" class="form-control" value="demopass123" required>
+                  <input type="password" id="login-password" class="form-control" placeholder="••••••••" autocomplete="current-password" required>
                 </div>
 
                 <div class="auth-options">
                   <label class="remember-me">
-                    <input type="checkbox" checked>
+                    <input type="checkbox" id="login-remember" checked>
                     <span>Remember this session</span>
                   </label>
-                  <a href="javascript:void(0)" class="forgot-password-link" onclick="alert('Password reset link has been dispatched to your corporate email.')">Forgot password?</a>
+                  <a href="javascript:void(0)" class="forgot-password-link" id="forgot-password-link">Forgot password?</a>
                 </div>
 
                 <button type="submit" class="btn btn-primary" style="width: 100%; padding: 12px;">
@@ -388,7 +389,7 @@
         <section id="view-dashboard" class="app-view">
           <div class="dashboard-header-greeting">
             <div>
-              <h1 class="dashboard-greeting-title">Good morning, <span class="user-name-display">Vikram</span> 👋</h1>
+              <h1 class="dashboard-greeting-title"><span id="dashboard-greeting-prefix">Welcome</span>, <span class="user-name-display">there</span> 👋</h1>
               <p class="dashboard-greeting-subtitle">Here's your revenue situation today.</p>
             </div>
             <div style="display: flex; gap: 10px;">
@@ -412,7 +413,7 @@
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
                 </div>
               </div>
-              <div id="kpi-total-outstanding" class="kpi-value">₹42.6L</div>
+              <div id="kpi-total-outstanding" class="kpi-value">₹0.0L</div>
               <div class="kpi-trend">
                 <span>Active uncollected receivables</span>
               </div>
@@ -425,7 +426,7 @@
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
                 </div>
               </div>
-              <div id="kpi-at-risk" class="kpi-value" style="color: var(--caput-mortuum);">₹12.4L</div>
+              <div id="kpi-at-risk" class="kpi-value" style="color: var(--caput-mortuum);">₹0.0L</div>
               <div class="kpi-trend negative">
                 <span>High probability of default</span>
               </div>
@@ -438,7 +439,7 @@
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
                 </div>
               </div>
-              <div id="kpi-overdue-count" class="kpi-value">87</div>
+              <div id="kpi-overdue-count" class="kpi-value">0</div>
               <div class="kpi-trend">
                 <span>Requiring priority action</span>
               </div>
@@ -451,9 +452,9 @@
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
                 </div>
               </div>
-              <div id="kpi-recovered-month" class="kpi-value" style="color: var(--coffee-dark);">₹8.2L</div>
-              <div class="kpi-trend positive">
-                <span>+18.4% vs last month</span>
+              <div id="kpi-recovered-month" class="kpi-value" style="color: var(--coffee-dark);">₹0.0L</div>
+              <div class="kpi-trend">
+                <span id="kpi-recovered-trend">No prior period data</span>
               </div>
             </div>
           </div>
@@ -464,7 +465,7 @@
               <div class="card-header">
                 <div>
                   <h3 class="card-title">Revenue Recovery Trend</h3>
-                  <div class="card-subtitle">Monthly recovered revenue vs at-risk exposure (March – August 2026)</div>
+                  <div class="card-subtitle" id="dashboard-trend-subtitle">Monthly recovered revenue vs at-risk exposure</div>
                 </div>
                 <span class="badge badge-tan">Live Data</span>
               </div>
@@ -498,8 +499,8 @@
               </button>
             </div>
 
-            <p class="ai-banner-summary">
-              "I analyzed 1,284 invoices and identified 37 payments that require immediate attention."
+            <p class="ai-banner-summary" id="ai-banner-summary">
+              Analyzing your current ledger...
             </p>
 
             <div class="ai-insights-cards-grid">
@@ -508,8 +509,8 @@
                   <span class="ai-insight-tag">HIGH RISK</span>
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
                 </div>
-                <h4 id="ai-high-risk-count">37 Invoices</h4>
-                <p id="ai-high-risk-amount">₹12.4L potentially at risk across delayed accounts.</p>
+                <h4 id="ai-high-risk-count">0 Invoices</h4>
+                <p id="ai-high-risk-amount">No at-risk invoices detected in this account.</p>
               </div>
 
               <div class="ai-insight-card">
@@ -517,8 +518,8 @@
                   <span class="ai-insight-tag">UPCOMING RISK</span>
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20"/><path d="m17 5-5-3-5 3"/><path d="m17 19-5 3-5-3"/></svg>
                 </div>
-                <h4>82 Invoices</h4>
-                <p>May become overdue within 7 days based on current client payment pacing.</p>
+                <h4 id="ai-upcoming-count">0 Invoices</h4>
+                <p id="ai-upcoming-amount">No upcoming due dates in the next 7 days.</p>
               </div>
 
               <div class="ai-insight-card">
@@ -526,7 +527,7 @@
                   <span class="ai-insight-tag">RECOVERY OPPORTUNITY</span>
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
                 </div>
-                <h4 id="ai-opportunity-amount">₹6.8L Potential</h4>
+                <h4 id="ai-opportunity-amount">₹0.0L Potential</h4>
                 <p>Could potentially be recovered this month by deploying targeted early discounts.</p>
               </div>
             </div>
@@ -664,8 +665,8 @@
               </div>
 
               <div id="copilot-chat-messages" class="copilot-chat-messages">
-                <div class="chat-bubble ai">
-                  Hello <span class="user-name-display">Vikram</span> 👋 I'm your RECO Revenue Copilot. I've continuously audited your accounts book and analyzed high-risk invoices requiring attention.<br><br>
+                <div class="chat-bubble ai" id="copilot-intro-bubble">
+                  Hello <span class="user-name-display">there</span> 👋 I'm your RECO Revenue Copilot. Ask me about overdue invoices, at-risk revenue, or payment behavior in this workspace.<br><br>
                   How would you like to proceed? You can click a quick question below or ask anything.
                 </div>
               </div>
@@ -681,8 +682,8 @@
                 <button class="prompt-chip" data-prompt="How much revenue is currently at risk?">
                   ⚠️ Revenue at risk?
                 </button>
-                <button class="prompt-chip" data-prompt="Why is ABC Constructions considered high risk?">
-                  🏢 Why is ABC Constructions high risk?
+                <button class="prompt-chip" id="prompt-why-high-risk" data-prompt="Why is my highest-risk customer high risk?">
+                  🏢 Why is my top account high risk?
                 </button>
               </div>
 
@@ -763,11 +764,11 @@
               <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 24px;">
                 <div style="background: var(--bg-cream-soft); padding: 14px; border-radius: 8px;">
                   <div style="font-size: 0.76rem; color: var(--slate-gray); text-transform: uppercase; font-weight: 700;">Current Outstanding</div>
-                  <div class="sim-outstanding-stat" style="font-size: 1.5rem; font-weight: 800; color: var(--space-cadet);">₹42.6L</div>
+                  <div class="sim-outstanding-stat" style="font-size: 1.5rem; font-weight: 800; color: var(--space-cadet);">₹0.0L</div>
                 </div>
                 <div style="background: var(--bg-cream-soft); padding: 14px; border-radius: 8px;">
                   <div style="font-size: 0.76rem; color: var(--slate-gray); text-transform: uppercase; font-weight: 700;">Current Recovery Rate</div>
-                  <div style="font-size: 1.5rem; font-weight: 800; color: var(--coffee);">68%</div>
+                  <div id="sim-current-rate" style="font-size: 1.5rem; font-weight: 800; color: var(--coffee);">0%</div>
                 </div>
               </div>
 
@@ -790,15 +791,15 @@
                 <div style="font-size: 0.85rem; font-weight: 700; color: var(--space-cadet); margin-bottom: 12px;">Active Recovery Levers:</div>
                 <div style="display: flex; flex-direction: column; gap: 10px;">
                   <label style="display: flex; align-items: center; gap: 10px; font-size: 0.88rem; color: var(--space-cadet);">
-                    <input type="checkbox" checked>
+                    <input type="checkbox" id="sim-lever-whatsapp" class="sim-lever-checkbox" data-lever="Autonomous WhatsApp Nudges (48h Pre-Due)" checked>
                     <span>Autonomous WhatsApp Nudges (48h Pre-Due)</span>
                   </label>
                   <label style="display: flex; align-items: center; gap: 10px; font-size: 0.88rem; color: var(--space-cadet);">
-                    <input type="checkbox" checked>
+                    <input type="checkbox" id="sim-lever-discount" class="sim-lever-checkbox" data-lever="Dynamic 2% Prompt Payment Incentive Algorithm" checked>
                     <span>Dynamic 2% Prompt Payment Incentive Algorithm</span>
                   </label>
                   <label style="display: flex; align-items: center; gap: 10px; font-size: 0.88rem; color: var(--space-cadet);">
-                    <input type="checkbox" checked>
+                    <input type="checkbox" id="sim-lever-escalation" class="sim-lever-checkbox" data-lever="Automated CFO Escalation Workflow (10d Overdue)" checked>
                     <span>Automated CFO Escalation Workflow (10d Overdue)</span>
                   </label>
                 </div>
@@ -814,7 +815,7 @@
 
               <div style="margin-top: 20px;">
                 <div style="font-size: 0.85rem; text-transform: uppercase; color: #CAD5E2; letter-spacing: 0.05em;">Projected Recovery</div>
-                <div id="sim-projected-value" class="sim-metric-big">₹10.3L</div>
+                <div id="sim-projected-value" class="sim-metric-big">₹0.0L</div>
               </div>
 
               <!-- Visual Progress Gauge -->
@@ -831,25 +832,64 @@
               <div class="sim-breakdown-row">
                 <div class="sim-stat">
                   <label>Current Recovery</label>
-                  <span>₹8.2L</span>
+                  <span id="sim-current-recovery">₹0.0L</span>
                 </div>
                 <div class="sim-stat">
                   <label>Potential Additional</label>
-                  <span id="sim-additional-value" style="color: var(--tan);">+₹2.1L</span>
+                  <span id="sim-additional-value" style="color: var(--tan);">+₹0.0L</span>
                 </div>
               </div>
 
               <div style="display: flex; justify-content: space-between; align-items: center; padding-top: 10px;">
                 <div>
                   <div style="font-size: 0.78rem; color: #CAD5E2;">Unrecovered Amount</div>
-                  <strong id="sim-unrecovered-value" style="font-size: 1.1rem; color: #FFA4A9;">₹32.3L</strong>
+                  <strong id="sim-unrecovered-value" style="font-size: 1.1rem; color: #FFA4A9;">₹0.0L</strong>
                 </div>
-                <button class="btn btn-tan" onclick="alert('Simulation strategy blueprint saved to your Quarterly Action Plan.')">
+                <button type="button" id="btn-apply-strategy" class="btn btn-tan">
                   Apply Strategy
                 </button>
               </div>
             </div>
           </div>
+
+          <article id="quarterly-action-plan-card" class="action-plan-card">
+            <div class="action-plan-header">
+              <div>
+                <div class="action-plan-kicker">Current workspace</div>
+                <h3>Quarterly Action Plan</h3>
+              </div>
+              <span id="qap-status-badge" class="badge badge-paid" style="display:none;">ACTIVE</span>
+            </div>
+            <div id="qap-empty-state" class="action-plan-empty">
+              No strategy has been applied yet. Adjust the recovery target and levers above, then click Apply Strategy to save a plan for this account.
+            </div>
+            <div id="qap-active-state" style="display:none;">
+              <div class="action-plan-metrics">
+                <div class="action-plan-metric">
+                  <label>Recovery Target</label>
+                  <strong id="qap-target">—</strong>
+                </div>
+                <div class="action-plan-metric">
+                  <label>Projected Recovery</label>
+                  <strong id="qap-projected">—</strong>
+                </div>
+                <div class="action-plan-metric">
+                  <label>Current Recovery</label>
+                  <strong id="qap-current">—</strong>
+                </div>
+                <div class="action-plan-metric">
+                  <label>Potential Additional</label>
+                  <strong id="qap-additional">—</strong>
+                </div>
+              </div>
+              <div class="action-plan-levers-label">Selected Recovery Levers</div>
+              <ul id="qap-levers-list" class="action-plan-levers"></ul>
+              <div class="action-plan-meta">
+                <span>Status: <strong id="qap-status">ACTIVE</strong></span>
+                <span>Applied: <strong id="qap-applied">—</strong></span>
+              </div>
+            </div>
+          </article>
         </section>
 
         <!-- ====================================================================
@@ -876,23 +916,23 @@
           <div class="reports-kpi-summary">
             <div class="kpi-card">
               <div class="kpi-label">Avg Recovery Cycle</div>
-              <div class="kpi-value" style="font-size: 1.6rem;">14.2 Days</div>
-              <div class="kpi-trend positive">-3.1 days improvement</div>
+              <div id="report-avg-cycle" class="kpi-value" style="font-size: 1.6rem;">0 Days</div>
+              <div id="report-avg-cycle-trend" class="kpi-trend">No invoices yet</div>
             </div>
             <div class="kpi-card">
               <div class="kpi-label">Automated Reminder ROI</div>
-              <div class="kpi-value" style="font-size: 1.6rem; color: var(--tan-dark);">84.6%</div>
-              <div class="kpi-trend">Settled within 48 hours</div>
+              <div id="report-reminder-roi" class="kpi-value" style="font-size: 1.6rem; color: var(--tan-dark);">0%</div>
+              <div id="report-reminder-roi-trend" class="kpi-trend">No recoveries yet</div>
             </div>
             <div class="kpi-card">
               <div class="kpi-label">High-Risk Exposure</div>
-              <div class="kpi-value" style="font-size: 1.6rem; color: var(--caput-mortuum);">29.1%</div>
-              <div class="kpi-trend negative">Of total receivables</div>
+              <div id="report-high-risk-exposure" class="kpi-value" style="font-size: 1.6rem; color: var(--caput-mortuum);">0%</div>
+              <div id="report-high-risk-trend" class="kpi-trend">No outstanding balance</div>
             </div>
             <div class="kpi-card">
               <div class="kpi-label">DSO (Days Sales Out)</div>
-              <div class="kpi-value" style="font-size: 1.6rem;">38 Days</div>
-              <div class="kpi-trend positive">Industry top quartile</div>
+              <div id="report-dso" class="kpi-value" style="font-size: 1.6rem;">0 Days</div>
+              <div id="report-dso-trend" class="kpi-trend">No open invoices</div>
             </div>
           </div>
 
@@ -971,6 +1011,18 @@
             <!-- Settings Content -->
             <div class="card">
               <form id="platform-settings-form">
+                <h3 style="font-size: 1.2rem; margin-bottom: 18px; color: var(--space-cadet);">Account Profile</h3>
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 18px;">
+                  <div class="form-group" style="margin-bottom:0;">
+                    <label class="form-label">Signed-in Name</label>
+                    <div id="settings-profile-name" style="font-weight:700; color:var(--space-cadet);">—</div>
+                  </div>
+                  <div class="form-group" style="margin-bottom:0;">
+                    <label class="form-label">Email</label>
+                    <div id="settings-profile-email" style="font-weight:700; color:var(--space-cadet);">—</div>
+                  </div>
+                </div>
+
                 <h3 style="font-size: 1.2rem; margin-bottom: 18px; color: var(--space-cadet);">Company Profile</h3>
 
                 <div class="form-group">
@@ -1016,7 +1068,7 @@
 
                 <div style="margin-top: 24px; display: flex; justify-content: space-between; align-items: center;">
                   <button type="button" id="btn-reset-app-data" class="btn btn-sm btn-ghost" style="color: var(--caput-mortuum);">
-                    Reset Demo Ledger
+                    Reset Workspace Ledger
                   </button>
                   <button type="submit" class="btn btn-primary">Save Changes</button>
                 </div>
@@ -1157,7 +1209,7 @@
 
       <div class="modal-footer">
         <button class="btn btn-secondary" onclick="document.getElementById('customer-modal-backdrop').classList.remove('active')">Close</button>
-        <button class="btn btn-primary" onclick="document.getElementById('customer-modal-backdrop').classList.remove('active'); window.location.hash='#copilot';">Draft Reminder Draft →</button>
+        <button class="btn btn-primary" id="btn-customer-draft-reminder">Draft Reminder →</button>
       </div>
     </div>
   </div>
@@ -1181,7 +1233,7 @@
 
           <div class="form-group">
             <label class="form-label">Invoice Amount (₹ INR)</label>
-            <input type="number" id="new-inv-amount" class="form-control" placeholder="e.g. 250000" min="1000" required>
+            <input type="number" id="new-inv-amount" class="form-control" placeholder="e.g. 250000" min="1" step="1" required>
           </div>
 
           <div class="form-group">
@@ -1227,7 +1279,7 @@
 
           <div class="form-group">
             <label class="form-label">Invoice Amount (₹ INR)</label>
-            <input type="number" id="edit-inv-amount" class="form-control" min="1000" required>
+            <input type="number" id="edit-inv-amount" class="form-control" min="1" step="1" required>
           </div>
 
           <div class="form-group">
@@ -1278,8 +1330,8 @@
 
       <div class="modal-body">
         <div style="background: var(--bg-cream-soft); padding: 18px; border-radius: 10px; margin-bottom: 18px;">
-          <strong style="color: var(--space-cadet); font-size: 1rem;">Portfolio Synthesis for August 2026</strong>
-          <p style="font-size: 0.9rem; color: var(--slate-gray); margin-top: 4px;">
+          <strong id="ai-analysis-title" style="color: var(--space-cadet); font-size: 1rem;">Portfolio Synthesis</strong>
+          <p id="ai-analysis-summary" style="font-size: 0.9rem; color: var(--slate-gray); margin-top: 4px;">
             The model completed multi-variable risk evaluation across active ledger accounts.
           </p>
         </div>
@@ -1287,14 +1339,46 @@
         <div style="display: flex; flex-direction: column; gap: 12px;">
           <div style="border-left: 4px solid var(--caput-mortuum); padding: 12px 16px; background: rgba(99, 32, 36, 0.04); border-radius: 6px;">
             <strong style="color: var(--caput-mortuum); font-size: 0.88rem;">Key Vulnerability:</strong>
-            <p style="font-size: 0.88rem; color: var(--space-cadet); margin-top: 2px;">
-              Accounts like Zenith Automations and ABC Constructions contribute to significant high-risk overdue exposure.
+            <p id="ai-analysis-vulnerability" style="font-size: 0.88rem; color: var(--space-cadet); margin-top: 2px;">
+              High-risk exposure will appear here once invoices are recorded.
             </p>
           </div>
 
           <div style="border-left: 4px solid var(--tan-dark); padding: 12px 16px; background: var(--tan-15); border-radius: 6px;">
             <strong style="color: var(--coffee-dark); font-size: 0.88rem;">Recommended Action Plan:</strong>
-            <p style="font-size: 0.88rem; color: var(--space-cadet); margin-top: 2px;">
+            <p id="ai-analysis-plan" style="font-size: 0.88rem; color: var(--space-cadet); margin-top: 2px;">
+              1. Enable automated WhatsApp pre-due reminders 48h before due dates.<br>
+              2. Offer 2% early settlement discount to high-aging accounts.<br>
+              3. Trigger executive escalation on invoices overdue by more than 14 days.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="document.getElementById('ai-analysis-modal-backdrop').classList.remove('active')">Close</button>
+        <button class="btn btn-tan" onclick="document.getElementById('ai-analysis-modal-backdrop').classList.remove('active'); window.location.hash='#simulator';">Run Simulator →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toast-container" class="toast-container"></div>
+
+  <!-- JavaScript Application Modules -->
+  <script src="js/store.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
+color: var(--caput-mortuum); font-size: 0.88rem;">Key Vulnerability:</strong>
+            <p id="ai-analysis-vulnerability" style="font-size: 0.88rem; color: var(--space-cadet); margin-top: 2px;">
+              High-risk exposure will appear here once invoices are recorded.
+            </p>
+          </div>
+
+          <div style="border-left: 4px solid var(--tan-dark); padding: 12px 16px; background: var(--tan-15); border-radius: 6px;">
+            <strong style="color: var(--coffee-dark); font-size: 0.88rem;">Recommended Action Plan:</strong>
+            <p id="ai-analysis-plan" style="font-size: 0.88rem; color: var(--space-cadet); margin-top: 2px;">
               1. Enable automated WhatsApp pre-due reminders 48h before due dates.<br>
               2. Offer 2% early settlement discount to high-aging accounts.<br>
               3. Trigger executive escalation on invoices overdue by more than 14 days.

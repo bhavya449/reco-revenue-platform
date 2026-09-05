@@ -206,6 +206,13 @@ button {
 /* ==========================================================================
    Buttons & UI Elements
    ========================================================================== */
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none !important;
+  box-shadow: none;
+}
+
 .btn {
   display: inline-flex;
   align-items: center;
@@ -617,6 +624,28 @@ button {
   color: var(--tan);
 }
 
+body.auth-only .app-sidebar,
+body.auth-only .app-topbar,
+body.auth-only .sidebar-overlay {
+  display: none !important;
+}
+
+body.auth-only .app-main {
+  margin-left: 0;
+}
+
+.sidebar-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(37, 52, 79, 0.45);
+  z-index: 95;
+}
+
+.sidebar-overlay.active {
+  display: block;
+}
+
 /* App Main Content Area */
 .app-main {
   flex: 1;
@@ -742,28 +771,7 @@ button {
   top: 0;
   background: rgba(250, 248, 245, 0.92);
   backdrop-filter: blur(12px);
-  border-bottom: 1px solid var(--border-light);
-  z-index: 100;
-  padding: 16px 40px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.landing-nav-links {
-  display: flex;
-  align-items: center;
-  gap: 28px;
-}
-
-.landing-nav-links a {
-  font-size: 0.92rem;
-  font-weight: 600;
-  color: var(--slate-gray);
-  transition: color var(--transition-fast);
-}
-
-.landing-nav-links a:hover {
+  border-bottom: 1px solid var(--border-light);g-nav-links a:hover {
   color: var(--space-cadet);
 }
 
@@ -1816,6 +1824,145 @@ button {
   margin-top: 4px;
 }
 
+.btn-apply-strategy-applied {
+  background: #1E6B24 !important;
+  color: #FFFFFF !important;
+  border-color: #1E6B24 !important;
+  box-shadow: none;
+}
+
+.action-plan-card {
+  margin-top: 28px;
+  background: var(--surface-white);
+  border: 1.5px solid var(--border-warm);
+  border-radius: var(--radius-lg);
+  padding: 28px;
+  box-shadow: var(--shadow-md);
+}
+
+.action-plan-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.action-plan-kicker {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--coffee);
+  margin-bottom: 4px;
+}
+
+.action-plan-header h3 {
+  font-size: 1.25rem;
+  color: var(--space-cadet);
+}
+
+.action-plan-empty {
+  background: var(--bg-cream-soft);
+  border: 1px dashed var(--border-warm);
+  border-radius: var(--radius-sm);
+  padding: 22px 18px;
+  color: var(--slate-gray);
+  font-size: 0.92rem;
+  line-height: 1.55;
+}
+
+.action-plan-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  margin-bottom: 20px;
+}
+
+.action-plan-metric {
+  background: var(--bg-cream-soft);
+  border-radius: 10px;
+  padding: 14px;
+}
+
+.action-plan-metric label {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--slate-gray);
+  margin-bottom: 6px;
+}
+
+.action-plan-metric strong {
+  font-size: 1.25rem;
+  color: var(--space-cadet);
+}
+
+.action-plan-levers-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--coffee);
+  margin-bottom: 8px;
+}
+
+.action-plan-levers {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0 0 18px;
+  padding: 0;
+}
+
+.action-plan-levers li {
+  position: relative;
+  padding: 8px 12px 8px 28px;
+  background: var(--bg-cream);
+  border: 1px solid var(--border-light);
+  border-radius: 8px;
+  font-size: 0.88rem;
+  color: var(--space-cadet);
+}
+
+.action-plan-levers li::before {
+  content: '•';
+  position: absolute;
+  left: 12px;
+  color: var(--coffee);
+  font-weight: 800;
+}
+
+.action-plan-meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  font-size: 0.85rem;
+  color: var(--slate-gray);
+  border-top: 1px solid var(--border-light);
+  padding-top: 14px;
+}
+
+.action-plan-meta strong {
+  color: var(--space-cadet);
+}
+
+@media (max-width: 1100px) {
+  .action-plan-metrics {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 540px) {
+  .action-plan-metrics {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* ==========================================================================
    8. REPORTS VIEW
    ========================================================================== */
@@ -1870,6 +2017,25 @@ button {
 
 .notification-item.recovery {
   border-left: 4px solid #1E6B24;
+}
+
+.notification-item.read {
+  opacity: 0.72;
+}
+
+.notification-item.unread {
+  box-shadow: 0 0 0 1px var(--tan-30);
+}
+
+.notification-item.unread::after {
+  content: '';
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--tan);
+  position: absolute;
+  top: 18px;
+  right: 18px;
 }
 
 .notification-icon-box {
@@ -2087,6 +2253,11 @@ button {
   border-left: 4px solid var(--caput-mortuum);
 }
 
+.toast.toast-warning {
+  border-left: 4px solid var(--tan);
+  background: #3a2f24;
+}
+
 @keyframes slideToast {
   from { transform: translateX(100%); opacity: 0; }
   to { transform: translateX(0); opacity: 1; }
@@ -2176,6 +2347,10 @@ button {
   }
   .toolbar-search-filter {
     flex-direction: column;
+    align-items: stretch;
+  }
+}
+on: column;
     align-items: stretch;
   }
 }

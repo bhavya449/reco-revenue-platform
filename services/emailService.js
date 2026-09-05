@@ -13,11 +13,22 @@
 const { Resend } = require('resend');
 const nodemailer = require('nodemailer');
 
+function escapeHtml(str) {
+  return String(str || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 /**
  * Generates the luxury-fintech styled HTML template for RECO welcome emails.
  */
 function generateWelcomeEmailHtml({ userName, userEmail, appUrl }) {
   const loginUrl = `${appUrl || 'http://localhost:8080'}/#login`;
+  userName = escapeHtml(userName);
+  userEmail = escapeHtml(userEmail);
 
   return `
 <!DOCTYPE html>

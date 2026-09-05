@@ -33,25 +33,67 @@ document.addEventListener('DOMContentLoaded', () => {
   function initRouter() {
     window.addEventListener('hashchange', handleRoute);
     if (!window.location.hash) {
-      window.location.hash = '#landing';
+      window.location.hash = store.state.auth.isAuthenticated ? '#dashboard' : '#landing';
     } else {
       handleRoute();
     }
   }
 
   function handleRoute() {
-    const hash = window.location.hash.replace('#', '') || 'landing';
+    const hash = (window.location.hash.replace('#', '') || 'landing').split('?')[0];
+    if (hash === 'signup') {
+      uiState.authMode = 'signup';
+      navigateTo('login');
+      switchAuthTab('signup');
+      return;
+    }
+    if (hash === 'profile') {
+      navigateTo('settings');
+      return;
+    }
     navigateTo(hash);
+  }
+
+  function switchAuthTab(mode) {
+    const authTabLogin = document.getElementById('auth-tab-login');
+    const authTabSignup = document.getElementById('auth-tab-signup');
+    const loginForm = document.getElementById('login-form');
+    const signupForm = document.getElementById('signup-form');
+    if (!authTabLogin || !authTabSignup || !loginForm || !signupForm) return;
+    if (mode === 'signup') {
+      authTabSignup.classList.add('active');
+      authTabLogin.classList.remove('active');
+      loginForm.style.display = 'none';
+      signupForm.style.display = 'block';
+      uiState.authMode = 'signup';
+    } else {
+      authTabLogin.classList.add('active');
+      authTabSignup.classList.remove('active');
+      loginForm.style.display = 'block';
+      signupForm.style.display = 'none';
+      uiState.authMode = 'login';
+    }
   }
 
   function navigateTo(viewName) {
     const publicViews = ['landing', 'login'];
+    const knownViews = ['landing', 'login', 'dashboard', 'invoices', 'customers', 'copilot', 'simulator', 'reports', 'notifications', 'settings'];
     const isAuth = store.state.auth.isAuthenticated;
+
+    if (!knownViews.includes(viewName)) {
+      window.location.hash = isAuth ? '#dashboard' : '#landing';
+      return;
+    }
 
     // Route Guard for Protected Pages
     if (!publicViews.includes(viewName) && !isAuth) {
       showToast('Please sign in to access your revenue workspace.', 'danger');
       window.location.hash = '#login';
+      return;
+    }
+
+    if (viewName === 'login' && isAuth) {
+      window.location.hash = '#dashboard';
       return;
     }
 
@@ -66,13 +108,15 @@ document.addEventListener('DOMContentLoaded', () => {
     if (targetView) {
       targetView.classList.add('active-view');
     } else {
-      const fallback = document.getElementById('view-landing');
-      if (fallback) fallback.classList.add('active-view');
+      window.location.hash = isAuth ? '#dashboard' : '#landing';
+      return;
     }
 
     // Toggle Landing / App Layout Shell
     const appShell = document.getElementById('app-shell-container');
     const landingView = document.getElementById('view-landing');
+    document.body.classList.toggle('auth-only', viewName === 'login');
+    document.body.classList.toggle('is-authenticated', isAuth);
 
     if (viewName === 'landing') {
       if (appShell) appShell.style.display = 'none';
@@ -123,6 +167,8 @@ document.addEventListener('DOMContentLoaded', () => {
     if (sidebar && sidebar.classList.contains('mobile-open')) {
       sidebar.classList.remove('mobile-open');
     }
+    const overlay = document.getElementById('sidebar-overlay');
+    if (overlay) overlay.classList.remove('active');
   }
 
   function updateUserDisplay() {
@@ -161,6 +207,8 @@ document.addEventListener('DOMContentLoaded', () => {
       renderCustomersGrid(metrics);
     } else if (viewName === 'simulator') {
       updateSimulatorMath(uiState.simulatorTargetRate);
+      renderQuarterlyActionPlan();
+      syncApplyStrategyButton();
     } else if (viewName === 'reports') {
       renderReportsCharts(metrics);
     } else if (viewName === 'notifications') {
@@ -182,7 +230,11 @@ document.addEventListener('DOMContentLoaded', () => {
     else if (uiState.currentView === 'customers') renderCustomersGrid(metrics);
     else if (uiState.currentView === 'reports') renderReportsCharts(metrics);
     else if (uiState.currentView === 'notifications') renderNotificationList();
-    else if (uiState.currentView === 'simulator') updateSimulatorMath(uiState.simulatorTargetRate);
+    else if (uiState.currentView === 'simulator') {
+      updateSimulatorMath(uiState.simulatorTargetRate);
+      renderQuarterlyActionPlan();
+      syncApplyStrategyButton();
+    }
     else if (uiState.currentView === 'copilot') {
       populateCopilotInvoiceSelector(metrics.invoices);
       updateReminderComposer(uiState.selectedInvoiceId, uiState.currentTone);
@@ -193,6 +245,11 @@ document.addEventListener('DOMContentLoaded', () => {
      2. Dashboard View Renderer (Data Isolated)
      ========================================================================== */
   function renderDashboard(metrics) {
+    const hour = new Date().getHours();
+    const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+    const greetEl = document.getElementById('dashboard-greeting-prefix');
+    if (greetEl) greetEl.textContent = greeting;
+
     // 4 Top KPI Cards
     const kpiOutstanding = document.getElementById('kpi-total-outstanding');
     const kpiAtRisk = document.getElementById('kpi-at-risk');
@@ -204,19 +261,45 @@ document.addEventListener('DOMContentLoaded', () => {
     if (kpiOverdue) kpiOverdue.textContent = metrics.overdueCount;
     if (kpiRecovered) kpiRecovered.textContent = metrics.recoveredThisMonthFormatted;
 
+    const recoveredTrend = document.getElementById('kpi-recovered-trend');
+    if (recoveredTrend) {
+      recoveredTrend.textContent = metrics.recoveredMomLabel;
+      recoveredTrend.classList.toggle('positive', !!metrics.recoveredMomPositive);
+      recoveredTrend.classList.toggle('negative', !metrics.recoveredMomPositive && metrics.recoveredThisMonthRaw > 0);
+    }
+
+    const trendSubtitle = document.getElementById('dashboard-trend-subtitle');
+    if (trendSubtitle && metrics.recoveryTrends && metrics.recoveryTrends.labels) {
+      const labels = metrics.recoveryTrends.labels;
+      trendSubtitle.textContent = `Monthly recovered revenue vs at-risk exposure (${labels[0]} – ${labels[labels.length - 1]})`;
+    }
+
     // AI Spotlight Summary
+    const aiSummary = document.getElementById('ai-banner-summary');
     const aiHighRiskCount = document.getElementById('ai-high-risk-count');
     const aiHighRiskAmt = document.getElementById('ai-high-risk-amount');
     const aiOppAmt = document.getElementById('ai-opportunity-amount');
+    const upcomingCount = document.getElementById('ai-upcoming-count');
+    const upcomingAmt = document.getElementById('ai-upcoming-amount');
 
     if (metrics.isEmpty) {
+      if (aiSummary) aiSummary.textContent = "You don't have any invoice data yet. Add your first invoice to start receiving recovery insights.";
       if (aiHighRiskCount) aiHighRiskCount.textContent = "0 Invoices";
       if (aiHighRiskAmt) aiHighRiskAmt.textContent = "No at-risk invoices detected in this account.";
       if (aiOppAmt) aiOppAmt.textContent = "₹0.0L Potential";
+      if (upcomingCount) upcomingCount.textContent = "0 Invoices";
+      if (upcomingAmt) upcomingAmt.textContent = "No upcoming due dates in the next 7 days.";
     } else {
+      if (aiSummary) {
+        aiSummary.textContent = `I analyzed ${metrics.totalInvoicesCount} invoice${metrics.totalInvoicesCount === 1 ? '' : 's'} and identified ${metrics.overdueCount} payment${metrics.overdueCount === 1 ? '' : 's'} that require immediate attention.`;
+      }
       if (aiHighRiskCount) aiHighRiskCount.textContent = `${metrics.highRiskCount} Invoices`;
       if (aiHighRiskAmt) aiHighRiskAmt.textContent = `${metrics.atRiskFormatted} potentially at risk across delayed accounts.`;
       if (aiOppAmt) aiOppAmt.textContent = `${metrics.recoveryOpportunityFormatted} Potential`;
+      if (upcomingCount) upcomingCount.textContent = `${metrics.upcoming7Count} Invoices`;
+      if (upcomingAmt) upcomingAmt.textContent = metrics.upcoming7Count
+        ? `${metrics.upcoming7Formatted} may become overdue within 7 days based on current due dates.`
+        : "No pending invoices are due within the next 7 days.";
     }
 
     // Render Charts
@@ -465,9 +548,10 @@ document.addEventListener('DOMContentLoaded', () => {
       // Search query
       if (uiState.invoiceSearchQuery) {
         const q = uiState.invoiceSearchQuery.toLowerCase();
-        return inv.id.toLowerCase().includes(q) ||
-               inv.customer.toLowerCase().includes(q) ||
-               inv.amount.toString().includes(q);
+        return String(inv.id || '').toLowerCase().includes(q) ||
+               String(inv.customer || '').toLowerCase().includes(q) ||
+               String(inv.amount).includes(q) ||
+               String(inv.status || '').toLowerCase().includes(q);
       }
       return true;
     });
@@ -591,7 +675,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let filtered = customers.filter(cust => {
       if (uiState.customerSearchQuery) {
         const q = uiState.customerSearchQuery.toLowerCase();
-        return cust.name.toLowerCase().includes(q) || cust.category.toLowerCase().includes(q);
+        return (cust.name || '').toLowerCase().includes(q) || (cust.category || '').toLowerCase().includes(q);
       }
       return true;
     });
@@ -615,11 +699,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
       card.innerHTML = `
         <div class="customer-card-header">
-          <div class="customer-avatar-box">${cust.name.substring(0, 2).toUpperCase()}</div>
+          <div class="customer-avatar-box">${escapeHtml((cust.name || 'C').substring(0, 2).toUpperCase())}</div>
           <span class="badge ${badgeRiskClass}">${cust.riskLevel} RISK (${cust.riskScore}/100)</span>
         </div>
         <div class="customer-company-name">${escapeHtml(cust.name)}</div>
-        <div style="font-size:0.82rem; color:var(--slate-gray); margin-bottom:12px;">${cust.category}</div>
+        <div style="font-size:0.82rem; color:var(--slate-gray); margin-bottom:12px;">${escapeHtml(cust.category || '')}</div>
         
         <div class="customer-stats-grid">
           <div class="customer-stat-box">
@@ -680,7 +764,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     notifs.forEach(notif => {
       const item = document.createElement('div');
-      item.className = `notification-item ${notif.type}`;
+      item.className = `notification-item ${notif.type} ${notif.read ? 'read' : 'unread'}`;
 
       let iconHtml = '';
       if (notif.type === 'critical') {
@@ -698,7 +782,7 @@ document.addEventListener('DOMContentLoaded', () => {
             <strong style="font-size:0.78rem; letter-spacing:0.06em; text-transform:uppercase; color:${notif.type === 'critical' ? 'var(--caput-mortuum)' : 'var(--coffee-dark)'};">
               ${escapeHtml(notif.title)}
             </strong>
-            <span style="font-size:0.78rem; color:var(--slate-gray);">${notif.timestamp}</span>
+            <span style="font-size:0.78rem; color:var(--slate-gray);">${escapeHtml(notif.timestamp || '')}${notif.read ? '' : ' · Unread'}</span>
           </div>
           <p style="margin-top:4px; font-size:0.92rem; color:var(--space-cadet);">${escapeHtml(notif.message)}</p>
           ${notif.invoiceId ? `
@@ -711,10 +795,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const inspectBtn = item.querySelector('.inspect-notif-btn');
       if (inspectBtn) {
-        inspectBtn.addEventListener('click', () => {
+        inspectBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          store.markNotificationRead(notif.id);
           openInvoiceDrawer(notif.invoiceId);
         });
       }
+
+      item.addEventListener('click', () => {
+        if (!notif.read) store.markNotificationRead(notif.id);
+      });
 
       container.appendChild(item);
     });
@@ -774,7 +864,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (channelCtx && typeof Chart !== 'undefined') {
       if (channelChartInstance) channelChartInstance.destroy();
 
-      const rates = metrics.isEmpty ? [0, 0, 0, 0] : [74, 82, 61, 89];
+      const rates = Array.isArray(metrics.channelRates) ? metrics.channelRates : [0, 0, 0, 0];
 
       channelChartInstance = new Chart(channelCtx, {
         type: 'bar',
@@ -842,14 +932,10 @@ document.addEventListener('DOMContentLoaded', () => {
       selectEl.appendChild(opt);
     });
 
-    if (!uiState.selectedInvoiceId && invoices.length > 0) {
+    if (!uiState.selectedInvoiceId || !invoices.some(i => i.id === uiState.selectedInvoiceId)) {
       uiState.selectedInvoiceId = invoices[0].id;
+      selectEl.value = uiState.selectedInvoiceId;
     }
-
-    selectEl.addEventListener('change', (e) => {
-      uiState.selectedInvoiceId = e.target.value;
-      updateReminderComposer(uiState.selectedInvoiceId, uiState.currentTone);
-    });
   }
 
   function updateReminderComposer(invoiceId, tone) {
@@ -953,7 +1039,7 @@ Collections Department | ${store.state.auth.user ? store.state.auth.user.company
 
       // Check if account has no data
       if (metrics.isEmpty || metrics.invoices.length === 0) {
-        aiResponseText = `You don't have any customer or invoice records in your account yet.\n\nClick **+ Add Invoice** in the top bar to record your first receivable, and I will automatically begin tracking risk scores, payment predictability, and recovery opportunities for your business!`;
+        aiResponseText = "You don't have any invoice data yet. Add your first invoice to start receiving recovery insights.\n\nClick **+ Add Invoice** to record your first receivable, and I will automatically begin tracking risk scores, payment predictability, and recovery opportunities for your business.";
       } else if (lower.includes('today') || lower.includes('follow up') || lower.includes('priority')) {
         const overdueInvoices = metrics.invoices
           .filter(i => i.status === 'Overdue')
@@ -968,7 +1054,7 @@ Collections Department | ${store.state.auth.user ? store.state.auth.user.company
             `\n\n*Targeting these accounts protects ${metrics.atRiskFormatted} of at-risk capital.*`;
         }
 
-      } else if (lower.includes('overdue') || lower.includes('likely')) {
+      } else if (lower.includes('likely') || lower.includes('become overdue') || lower.includes('upcoming')) {
         const upcoming = metrics.invoices.filter(i => i.status === 'Pending');
         if (upcoming.length === 0) {
           aiResponseText = `There are currently no upcoming pending invoices in your account.`;
@@ -976,6 +1062,15 @@ Collections Department | ${store.state.auth.user ? store.state.auth.user.company
           aiResponseText = `RECO analyzed your active ledger and flagged **${upcoming.length} pending invoices**:\n\n` +
             upcoming.map(i => `* **${i.customer} (${i.id}: ₹${i.amount.toLocaleString('en-IN')})** — Due ${formatDate(i.dueDate)} (Risk: ${i.riskScore}%)`).join('\n') +
             `\n\n💡 *Recommendation: Dispatch automated pre-due nudges 48h before due dates.*`;
+        }
+
+      } else if (lower.includes('overdue') || lower.includes('worst payment') || lower.includes('worst')) {
+        const overdueInvoices = metrics.invoices.filter(i => i.status === 'Overdue').sort((a, b) => b.daysOverdue - a.daysOverdue);
+        if (overdueInvoices.length === 0) {
+          aiResponseText = `You currently have **0 overdue invoices**.`;
+        } else {
+          aiResponseText = `You have **${overdueInvoices.length} overdue invoices** totaling **${metrics.totalOutstandingFormatted} outstanding**:\n\n` +
+            overdueInvoices.map((inv, idx) => `${idx + 1}. **${inv.customer}** (${inv.id}: ₹${inv.amount.toLocaleString('en-IN')} | ${inv.daysOverdue}d overdue | Risk: ${inv.riskScore}%)`).join('\n');
         }
 
       } else if (lower.includes('at risk') || lower.includes('revenue at risk') || lower.includes('how much')) {
@@ -1010,18 +1105,13 @@ Collections Department | ${store.state.auth.user ? store.state.auth.user.company
     const targetEl = document.getElementById('sim-target-display');
     if (targetEl) targetEl.textContent = `${targetPercent}%`;
 
-    const totalOut = metrics.totalOutstandingRaw;
-    const currentRecovered = metrics.recoveredThisMonthRaw;
+    const totalOut = metrics.totalOutstandingRaw || 0;
+    const currentRate = Math.max(0, Math.min(100, metrics.recoveryRate || 0));
 
-    let projectedRecoveryRaw = 0;
-    let additionalRecoveryRaw = 0;
-    let unrecoveredRaw = 0;
-
-    if (totalOut > 0) {
-      projectedRecoveryRaw = (totalOut * (targetPercent / 100)) * 0.35 + currentRecovered;
-      additionalRecoveryRaw = Math.max(0, projectedRecoveryRaw - currentRecovered);
-      unrecoveredRaw = Math.max(0, totalOut - additionalRecoveryRaw);
-    }
+    const projectedRecoveryRaw = totalOut * (targetPercent / 100);
+    const baselineRecoveryRaw = totalOut * (currentRate / 100);
+    const additionalRecoveryRaw = Math.max(0, projectedRecoveryRaw - baselineRecoveryRaw);
+    const unrecoveredRaw = Math.max(0, totalOut - projectedRecoveryRaw);
 
     const projectedFormatted = `₹${(projectedRecoveryRaw / 100000).toFixed(1)}L`;
     const additionalFormatted = `+₹${(additionalRecoveryRaw / 100000).toFixed(1)}L`;
@@ -1032,13 +1122,139 @@ Collections Department | ${store.state.auth.user ? store.state.auth.user.company
     const unrecEl = document.getElementById('sim-unrecovered-value');
     const progBar = document.getElementById('sim-progress-bar');
     const outStatEls = document.querySelectorAll('.sim-outstanding-stat');
+    const rateEl = document.getElementById('sim-current-rate');
+    const currentRecEl = document.getElementById('sim-current-recovery');
 
     outStatEls.forEach(el => el.textContent = metrics.totalOutstandingFormatted);
+    if (rateEl) rateEl.textContent = `${currentRate.toFixed(0)}%`;
+    if (currentRecEl) currentRecEl.textContent = metrics.recoveredThisMonthFormatted;
 
     if (projEl) projEl.textContent = projectedFormatted;
     if (addEl) addEl.textContent = additionalFormatted;
     if (unrecEl) unrecEl.textContent = unrecoveredFormatted;
     if (progBar) progBar.style.width = `${targetPercent}%`;
+    syncApplyStrategyButton();
+  }
+
+  function getSelectedRecoveryLevers() {
+    return Array.from(document.querySelectorAll('.sim-lever-checkbox:checked'))
+      .map(el => el.getAttribute('data-lever'))
+      .filter(Boolean);
+  }
+
+  function collectCurrentStrategyDraft() {
+    const metrics = store.getComputedMetrics();
+    const targetPercent = Number(uiState.simulatorTargetRate) || 85;
+    const totalOut = metrics.totalOutstandingRaw || 0;
+    const currentRate = Math.max(0, Math.min(100, metrics.recoveryRate || 0));
+    const projectedRecoveryRaw = totalOut * (targetPercent / 100);
+    const baselineRecoveryRaw = totalOut * (currentRate / 100);
+    const additionalRecoveryRaw = Math.max(0, projectedRecoveryRaw - baselineRecoveryRaw);
+    const unrecoveredRaw = Math.max(0, totalOut - projectedRecoveryRaw);
+    return {
+      recoveryTarget: targetPercent,
+      projectedRecoveryFormatted: `₹${(projectedRecoveryRaw / 100000).toFixed(1)}L`,
+      currentRecoveryFormatted: metrics.recoveredThisMonthFormatted,
+      additionalRecoveryFormatted: `+₹${(additionalRecoveryRaw / 100000).toFixed(1)}L`,
+      outstandingFormatted: metrics.totalOutstandingFormatted,
+      recoveryRateFormatted: `${currentRate.toFixed(0)}%`,
+      unrecoveredFormatted: `₹${(unrecoveredRaw / 100000).toFixed(1)}L`,
+      levers: getSelectedRecoveryLevers()
+    };
+  }
+
+  function formatAppliedAt(iso) {
+    if (!iso) return 'Today';
+    const applied = new Date(iso);
+    if (Number.isNaN(applied.getTime())) return 'Today';
+    const today = store.todayLocal();
+    if (applied.getFullYear() === today.getFullYear() && applied.getMonth() === today.getMonth() && applied.getDate() === today.getDate()) {
+      return 'Today';
+    }
+    return applied.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  }
+
+  function renderQuarterlyActionPlan() {
+    const emptyEl = document.getElementById('qap-empty-state');
+    const activeEl = document.getElementById('qap-active-state');
+    const badgeEl = document.getElementById('qap-status-badge');
+    const plan = store.getQuarterlyActionPlan();
+
+    if (!plan) {
+      if (emptyEl) emptyEl.style.display = 'block';
+      if (activeEl) activeEl.style.display = 'none';
+      if (badgeEl) badgeEl.style.display = 'none';
+      return;
+    }
+
+    if (emptyEl) emptyEl.style.display = 'none';
+    if (activeEl) activeEl.style.display = 'block';
+    if (badgeEl) badgeEl.style.display = 'inline-flex';
+
+    const setText = (id, value) => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = value;
+    };
+    setText('qap-target', `${plan.recoveryTarget}%`);
+    setText('qap-projected', plan.projectedRecoveryFormatted || '—');
+    setText('qap-current', plan.currentRecoveryFormatted || '—');
+    setText('qap-additional', plan.additionalRecoveryFormatted || '—');
+    setText('qap-status', plan.status || 'ACTIVE');
+    setText('qap-applied', formatAppliedAt(plan.appliedAt));
+
+    const list = document.getElementById('qap-levers-list');
+    if (list) {
+      list.innerHTML = '';
+      const levers = Array.isArray(plan.levers) ? plan.levers : [];
+      if (levers.length === 0) {
+        const li = document.createElement('li');
+        li.textContent = 'No recovery levers selected.';
+        list.appendChild(li);
+      } else {
+        levers.forEach(label => {
+          const li = document.createElement('li');
+          li.textContent = label;
+          list.appendChild(li);
+        });
+      }
+    }
+  }
+
+  function syncApplyStrategyButton() {
+    const btn = document.getElementById('btn-apply-strategy');
+    if (!btn) return;
+    const saved = store.getQuarterlyActionPlan();
+    const draft = collectCurrentStrategyDraft();
+    const isActiveMatch = !!(saved && store.strategyFingerprint(saved) === store.strategyFingerprint(draft));
+    btn.classList.toggle('btn-apply-strategy-applied', isActiveMatch);
+    btn.textContent = isActiveMatch ? '✓ Strategy Applied' : 'Apply Strategy';
+  }
+
+  async function applySimulatorStrategy() {
+    const btn = document.getElementById('btn-apply-strategy');
+    if (btn) btn.disabled = true;
+    try {
+      const draft = collectCurrentStrategyDraft();
+      const result = await store.applyQuarterlyStrategy(draft);
+      if (!result || !result.success) {
+        showToast((result && result.message) || 'Unable to save strategy. Please try again.', 'danger');
+        return;
+      }
+      if (result.alreadyActive) {
+        showToast('This strategy is already active.', 'warning');
+      } else {
+        showToast(`Strategy Applied Successfully. Your ${draft.recoveryTarget}% recovery strategy has been added to your Quarterly Action Plan.`);
+      }
+      renderQuarterlyActionPlan();
+      syncApplyStrategyButton();
+      const card = document.getElementById('quarterly-action-plan-card');
+      if (card) card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    } catch (err) {
+      console.warn('Apply strategy failed:', err);
+      showToast('Unable to save strategy. Please try again.', 'danger');
+    } finally {
+      if (btn) btn.disabled = false;
+    }
   }
 
   /* ==========================================================================
@@ -1117,6 +1333,16 @@ Collections Department | ${store.state.auth.user ? store.state.auth.user.company
     document.getElementById('modal-customer-recovered').textContent = cust.totalRecovered ? `₹${(cust.totalRecovered/100000).toFixed(1)}L` : '₹0.0L';
     document.getElementById('modal-customer-ai-assessment').textContent = cust.aiAssessment || "Active debtor profile.";
     document.getElementById('modal-customer-contact').textContent = `${cust.contactPerson || 'Finance Lead'} (${cust.email}, ${cust.phone})`;
+
+    const draftBtn = document.getElementById('btn-customer-draft-reminder');
+    if (draftBtn) {
+      draftBtn.onclick = () => {
+        const firstInv = (metrics.invoices || []).find(i => i.customerId === cust.id || (i.customer && i.customer.toLowerCase() === String(cust.name).toLowerCase()));
+        closeCustomerModal();
+        if (firstInv) openReminderForInvoice(firstInv.id);
+        else window.location.hash = '#copilot';
+      };
+    }
 
     const modalBackdrop = document.getElementById('customer-modal-backdrop');
     if (modalBackdrop) modalBackdrop.classList.add('active');
@@ -1215,13 +1441,55 @@ Collections Department | ${store.state.auth.user ? store.state.auth.user.company
     if (companyInput) companyInput.value = s.companyName || u.company || "Enterprise Corp";
     if (gstinInput) gstinInput.value = s.gstin || "";
     if (currencySelect) currencySelect.value = s.currency || "INR";
-    if (riskSelect) riskSelect.value = s.riskThreshold || "80";
+    if (riskSelect) riskSelect.value = String(s.riskThreshold || "80");
     if (autoNudgeCheckbox) autoNudgeCheckbox.checked = s.autoNudge !== false;
+
+    const profileName = document.getElementById('settings-profile-name');
+    const profileEmail = document.getElementById('settings-profile-email');
+    if (profileName) profileName.textContent = u.name || '—';
+    if (profileEmail) profileEmail.textContent = u.email || '—';
   }
 
   /* ==========================================================================
      10. Toast Notification System
      ========================================================================== */
+  function populateAiAnalysisModal() {
+    const metrics = store.getComputedMetrics();
+    const titleEl = document.getElementById('ai-analysis-title');
+    const summaryEl = document.getElementById('ai-analysis-summary');
+    const vulnEl = document.getElementById('ai-analysis-vulnerability');
+    const planEl = document.getElementById('ai-analysis-plan');
+    const monthLabel = new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+    if (titleEl) titleEl.textContent = `Portfolio Synthesis for ${monthLabel}`;
+    if (metrics.isEmpty) {
+      if (summaryEl) summaryEl.textContent = "No ledger data is available in this workspace yet.";
+      if (vulnEl) vulnEl.textContent = "You don't have any invoice data yet. Add your first invoice to start receiving recovery insights.";
+      if (planEl) planEl.innerHTML = "1. Add customers and invoices.<br>2. Let the risk engine score overdue exposure.<br>3. Use Copilot to draft reminders once data exists.";
+      return;
+    }
+    const highRisk = (metrics.customers || []).filter(c => c.riskLevel === 'HIGH').slice(0, 3);
+    const names = highRisk.map(c => c.name);
+    if (summaryEl) {
+      summaryEl.textContent = `The model evaluated ${metrics.totalInvoicesCount} invoices across ${metrics.customers.length} customer accounts.`;
+    }
+    if (vulnEl) {
+      vulnEl.textContent = names.length
+        ? `Accounts like ${names.join(' and ')} contribute to ${metrics.atRiskFormatted} of high-risk overdue exposure.`
+        : `Current at-risk exposure is ${metrics.atRiskFormatted} across ${metrics.highRiskCount} invoice(s).`;
+    }
+    if (planEl) {
+      planEl.innerHTML = `1. Follow up on ${metrics.overdueCount} overdue invoice(s) totaling ${metrics.totalOutstandingFormatted}.<br>2. Offer early settlement on high-aging accounts (${metrics.recoveryOpportunityFormatted} opportunity).<br>3. Trigger escalation on invoices overdue by more than 14 days.`;
+    }
+  }
+
+  function closeActiveOverlays() {
+    document.querySelectorAll('.modal-backdrop.active, .drawer-backdrop.active').forEach(el => el.classList.remove('active'));
+    const sidebar = document.getElementById('app-sidebar');
+    if (sidebar) sidebar.classList.remove('mobile-open');
+    const overlay = document.getElementById('sidebar-overlay');
+    if (overlay) overlay.classList.remove('active');
+  }
+
   function showToast(message, type = 'success') {
     const container = document.getElementById('toast-container');
     if (!container) return;
@@ -1260,9 +1528,26 @@ Collections Department | ${store.state.auth.user ? store.state.auth.user.company
     // Mobile Sidebar Toggle
     const mobileToggle = document.getElementById('sidebar-toggle-btn');
     const sidebar = document.getElementById('app-sidebar');
+    const sidebarOverlay = document.getElementById('sidebar-overlay');
+    function setSidebarOpen(open) {
+      if (!sidebar) return;
+      sidebar.classList.toggle('mobile-open', open);
+      if (sidebarOverlay) sidebarOverlay.classList.toggle('active', open);
+    }
     if (mobileToggle && sidebar) {
       mobileToggle.addEventListener('click', () => {
-        sidebar.classList.toggle('mobile-open');
+        setSidebarOpen(!sidebar.classList.contains('mobile-open'));
+      });
+    }
+    if (sidebarOverlay) {
+      sidebarOverlay.addEventListener('click', () => setSidebarOpen(false));
+    }
+
+    const copilotSelect = document.getElementById('copilot-invoice-select');
+    if (copilotSelect) {
+      copilotSelect.addEventListener('change', (e) => {
+        uiState.selectedInvoiceId = e.target.value || null;
+        updateReminderComposer(uiState.selectedInvoiceId, uiState.currentTone);
       });
     }
 
@@ -1308,17 +1593,25 @@ Collections Department | ${store.state.auth.user ? store.state.auth.user.company
     if (addInvoiceForm) {
       addInvoiceForm.addEventListener('submit', (e) => {
         e.preventDefault();
-        const customer = document.getElementById('new-inv-customer').value;
+        const customer = document.getElementById('new-inv-customer').value.trim();
         const amount = parseFloat(document.getElementById('new-inv-amount').value);
         const dueDate = document.getElementById('new-inv-due-date').value;
         const status = document.getElementById('new-inv-status').value || 'Pending';
 
-        if (!customer || !amount || !dueDate) {
+        if (!customer || !dueDate) {
           showToast('Please fill out all required fields.', 'danger');
+          return;
+        }
+        if (!Number.isFinite(amount) || amount <= 0) {
+          showToast('Invoice amount must be a positive number.', 'danger');
           return;
         }
 
         const newInv = store.addInvoice({ customer, amount, dueDate, status });
+        if (!newInv || newInv.error) {
+          showToast((newInv && newInv.error) || 'Could not add invoice.', 'danger');
+          return;
+        }
         addInvoiceModal.classList.remove('active');
         addInvoiceForm.reset();
         showToast(`Invoice #${newInv.id} added! AI risk score computed and workspace synchronized.`);
@@ -1337,14 +1630,31 @@ Collections Department | ${store.state.auth.user ? store.state.auth.user.company
       editInvoiceForm.addEventListener('submit', (e) => {
         e.preventDefault();
         const id = document.getElementById('edit-inv-id').value;
-        const customer = document.getElementById('edit-inv-customer').value;
+        const customer = document.getElementById('edit-inv-customer').value.trim();
         const amount = parseFloat(document.getElementById('edit-inv-amount').value);
         const dueDate = document.getElementById('edit-inv-due-date').value;
         const status = document.getElementById('edit-inv-status').value;
         const recommendedAction = document.getElementById('edit-inv-action').value;
         const aiNotes = document.getElementById('edit-inv-notes').value;
 
-        store.editInvoice(id, { customer, amount, dueDate, status, recommendedAction, aiNotes });
+        if (!customer || !dueDate) {
+          showToast('Please fill out all required fields.', 'danger');
+          return;
+        }
+        if (!Number.isFinite(amount) || amount <= 0) {
+          showToast('Invoice amount must be a positive number.', 'danger');
+          return;
+        }
+
+        const result = store.editInvoice(id, { customer, amount, dueDate, status, recommendedAction, aiNotes });
+        if (result && result.error) {
+          showToast(result.error, 'danger');
+          return;
+        }
+        if (!result) {
+          showToast('Could not update invoice.', 'danger');
+          return;
+        }
         editInvoiceModal.classList.remove('active');
         showToast(`Invoice #${id} updated successfully!`);
       });
@@ -1404,7 +1714,13 @@ Collections Department | ${store.state.auth.user ? store.state.auth.user.company
     const sendReminderBtn = document.getElementById('btn-send-reminder');
     if (sendReminderBtn) {
       sendReminderBtn.addEventListener('click', () => {
-        showToast(`Payment reminder queued for dispatch! Live telemetry attached.`);
+        const metrics = store.getComputedMetrics();
+        const inv = (metrics.invoices || []).find(i => i.id === uiState.selectedInvoiceId);
+        if (!inv) {
+          showToast('Add an invoice before sending a reminder.', 'danger');
+          return;
+        }
+        showToast(`Reminder queued (demo) for ${inv.customer} — Invoice #${inv.id}. Email delivery is not configured.`, 'warning');
       });
     }
 
@@ -1424,6 +1740,15 @@ Collections Department | ${store.state.auth.user ? store.state.auth.user.company
       });
     }
 
+    document.querySelectorAll('.sim-lever-checkbox').forEach(box => {
+      box.addEventListener('change', () => syncApplyStrategyButton());
+    });
+
+    const applyStrategyBtn = document.getElementById('btn-apply-strategy');
+    if (applyStrategyBtn) {
+      applyStrategyBtn.addEventListener('click', applySimulatorStrategy);
+    }
+
     // Export Reports
     const exportBtn = document.getElementById('btn-export-report');
     if (exportBtn) {
@@ -1438,7 +1763,10 @@ Collections Department | ${store.state.auth.user ? store.state.auth.user.company
     const aiAnalysisModal = document.getElementById('ai-analysis-modal-backdrop');
     const closeAiAnalysisBtn = document.getElementById('btn-close-ai-analysis');
     if (viewAiAnalysisBtn && aiAnalysisModal) {
-      viewAiAnalysisBtn.addEventListener('click', () => aiAnalysisModal.classList.add('active'));
+      viewAiAnalysisBtn.addEventListener('click', () => {
+        populateAiAnalysisModal();
+        aiAnalysisModal.classList.add('active');
+      });
     }
     if (closeAiAnalysisBtn && aiAnalysisModal) {
       closeAiAnalysisBtn.addEventListener('click', () => aiAnalysisModal.classList.remove('active'));
@@ -1489,6 +1817,7 @@ Collections Department | ${store.state.auth.user ? store.state.auth.user.company
             acc.customers = [];
             acc.invoices = [];
             acc.notifications = [];
+            acc.quarterlyActionPlan = null;
             store.saveCurrentAccount(acc);
           }
           showToast('Workspace reset.');
@@ -1521,6 +1850,14 @@ Collections Department | ${store.state.auth.user ? store.state.auth.user.company
       });
     }
 
+    const forgotLink = document.getElementById('forgot-password-link');
+    if (forgotLink) {
+      forgotLink.addEventListener('click', (e) => {
+        e.preventDefault();
+        showToast('Password reset is not enabled in this workspace. Use demo login or create a new account.', 'warning');
+      });
+    }
+
     if (loginForm) {
       loginForm.addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -1530,7 +1867,9 @@ Collections Department | ${store.state.auth.user ? store.state.auth.user.company
         if (submitBtn) submitBtn.disabled = true;
 
         try {
-          const result = await store.login(email, password);
+          const rememberEl = document.getElementById('login-remember');
+          const remember = rememberEl ? rememberEl.checked : true;
+          const result = await store.login(email, password, { remember });
           if (result.success) {
             showToast(`Welcome back, ${store.state.auth.user ? store.state.auth.user.name : 'User'}!`);
             setTimeout(() => window.location.hash = '#dashboard', 300);
@@ -1588,11 +1927,33 @@ Collections Department | ${store.state.auth.user ? store.state.auth.user.company
     document.querySelectorAll('.logout-trigger-btn').forEach(btn => {
       btn.addEventListener('click', (e) => {
         e.preventDefault();
+        e.stopPropagation();
         store.logout();
         showToast('Signed out of RECO.');
         window.location.hash = '#login';
       });
     });
+
+    document.querySelectorAll('.modal-backdrop, .drawer-backdrop').forEach(backdrop => {
+      backdrop.addEventListener('click', (e) => {
+        if (e.target === backdrop) backdrop.classList.remove('active');
+      });
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') closeActiveOverlays();
+    });
+
+    const landingGetStarted = document.getElementById('landing-get-started');
+    if (landingGetStarted) {
+      landingGetStarted.addEventListener('click', (e) => {
+        e.preventDefault();
+        if (store.state.auth.isAuthenticated) window.location.hash = '#dashboard';
+        else {
+          window.location.hash = '#signup';
+        }
+      });
+    }
   }
 
   /* ==========================================================================
@@ -1600,7 +1961,8 @@ Collections Department | ${store.state.auth.user ? store.state.auth.user.company
      ========================================================================== */
   function formatDate(dateStr) {
     if (!dateStr) return 'N/A';
-    const d = new Date(dateStr);
+    const d = store.parseLocalDate(dateStr);
+    if (!d) return 'N/A';
     return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   }
 
@@ -1610,7 +1972,8 @@ Collections Department | ${store.state.auth.user ? store.state.auth.user.company
   }
 
   function formatMarkdownText(txt) {
-    return txt
+    const safe = escapeHtml(txt || '');
+    return safe
       .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
       .replace(/\*(.*?)\*/g, '<em>$1</em>')
       .replace(/\n\n/g, '<br><br>')
@@ -1619,21 +1982,63 @@ Collections Department | ${store.state.auth.user ? store.state.auth.user.company
 
   function downloadMockCSV() {
     const metrics = store.getComputedMetrics();
-    let csvContent = "data:text/csv;charset=utf-8,Invoice ID,Customer,Amount (INR),Due Date,Days Overdue,Status,AI Risk Score\n";
+    const rows = [['Invoice ID','Customer','Amount (INR)','Due Date','Days Overdue','Status','AI Risk Score']];
     (metrics.invoices || []).forEach(inv => {
-      csvContent += `${inv.id},"${inv.customer.replace(/"/g, '""')}",${inv.amount},${inv.dueDate},${inv.daysOverdue},${inv.status},${inv.riskScore}%\n`;
+      rows.push([
+        inv.id,
+        inv.customer || '',
+        inv.amount,
+        inv.dueDate,
+        inv.daysOverdue,
+        inv.status,
+        `${inv.riskScore}%`
+      ]);
     });
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `RECO_Revenue_Recovery_Report_${new Date().toISOString().split('T')[0]}.csv`);
+    const csvContent = rows.map(cols => cols.map(val => {
+      const str = String(val == null ? '' : val);
+      return /[",\n]/.test(str) ? `"${str.replace(/"/g, '""')}"` : str;
+    }).join(',')).join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `RECO_Revenue_Recovery_Report_${store.toLocalISODate()}.csv`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    URL.revokeObjectURL(url);
     showToast('Report CSV generated and downloaded!');
   }
 
+  function refreshCopilotPrompts() {
+    const metrics = store.getComputedMetrics();
+    const intro = document.getElementById('copilot-intro-bubble');
+    if (intro && !intro.dataset.locked) {
+      const name = (store.state.auth.user && store.state.auth.user.name) || 'there';
+      if (metrics.isEmpty) {
+        intro.innerHTML = `Hello <strong>${escapeHtml(name)}</strong> 👋 I'm your RECO Revenue Copilot. You don't have any invoice data yet. Add your first invoice to start receiving recovery insights.`;
+      } else {
+        intro.innerHTML = `Hello <strong>${escapeHtml(name)}</strong> 👋 I'm your RECO Revenue Copilot. I've audited <strong>${metrics.totalInvoicesCount}</strong> invoices in this workspace and can help with overdue follow-ups, risk, and reminders.`;
+      }
+    }
+    const whyChip = document.getElementById('prompt-why-high-risk');
+    if (!whyChip) return;
+    if (metrics.isEmpty || !metrics.customers.length) {
+      whyChip.setAttribute('data-prompt', 'Why is my highest-risk customer high risk?');
+      whyChip.textContent = '🏢 Why is my top account high risk?';
+      return;
+    }
+    const top = metrics.customers.slice().sort((a, b) => (b.riskScore || 0) - (a.riskScore || 0))[0];
+    whyChip.setAttribute('data-prompt', `Why is ${top.name} considered high risk?`);
+    whyChip.textContent = `🏢 Why is ${top.name.split(' ')[0]} high risk?`;
+  }
+
   // Initial Boot
-  initRouter();
   setupEventListeners();
+  initRouter();
+  refreshCopilotPrompts();
+  store.subscribe(() => refreshCopilotPrompts());
+  if (store.state.auth.isAuthenticated) {
+    store.hydrateFromBackend().catch(() => {});
+  }
 });

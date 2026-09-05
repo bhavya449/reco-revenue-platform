@@ -8,8 +8,12 @@ class RecoStore {
     this.REGISTRY_KEY = 'RECO_ACCOUNTS_REGISTRY_V2';
     this.SESSION_KEY = 'RECO_ACTIVE_SESSION_V2';
     this.DEMO_ACCOUNT_ID = 'acc_demo_vikram';
-    
+    this.DEMO_EMAIL = 'vikram@apexenterprise.com';
+    this.DEMO_PASSWORD = 'demopass123';
+
     this.listeners = [];
+    this.sessionToken = null;
+    this._remoteSyncTimer = null;
     this.initRegistry();
     this.activeAccountId = this.loadActiveSession();
   }
@@ -20,7 +24,7 @@ class RecoStore {
       user: {
         id: this.DEMO_ACCOUNT_ID,
         name: "Vikram Malhotra",
-        email: "vikram@apexenterprise.com",
+        email: this.DEMO_EMAIL,
         role: "Head of Credit & Collections",
         company: "Apex Enterprise Solutions Pvt. Ltd."
       },
@@ -214,7 +218,7 @@ class RecoStore {
           accountId: this.DEMO_ACCOUNT_ID,
           type: "critical",
           title: "HIGH PRIORITY",
-          message: "ABC Constructions is now 18 days overdue on Invoice #INV-1024 (₹4,80,000).",
+          message: "ABC Constructions is now overdue on Invoice #INV-1024 (₹4,80,000).",
           timestamp: "10 mins ago",
           read: false,
           invoiceId: "INV-1024"
@@ -244,7 +248,7 @@ class RecoStore {
           accountId: this.DEMO_ACCOUNT_ID,
           type: "critical",
           title: "UPCOMING OVERDUE RISK",
-          message: "5 invoices totaling ₹5,80,000 are projected to become overdue tomorrow without intervention.",
+          message: "Pending invoices totaling ₹5,05,000 are approaching their due dates without intervention.",
           timestamp: "5 hours ago",
           read: true,
           invoiceId: null
@@ -257,57 +261,119 @@ class RecoStore {
         riskThreshold: 80,
         autoNudge: true
       },
-      baseHistoricalRecovered: 820000
+      baseHistoricalRecovered: 820000,
+      quarterlyActionPlan: null
     };
   }
 
-  // Initialize Account Registry
+  /* ==========================================================================
+     Date helpers (timezone-safe)
+     ========================================================================== */
+  parseLocalDate(dateStr) {
+    if (!dateStr) return null;
+    const raw = String(dateStr).trim();
+    const iso = raw.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (iso) {
+      return new Date(Number(iso[1]), Number(iso[2]) - 1, Number(iso[3]));
+    }
+    const d = new Date(raw);
+    return Number.isNaN(d.getTime()) ? null : d;
+  }
+
+  todayLocal() {
+    const n = new Date();
+    return new Date(n.getFullYear(), n.getMonth(), n.getDate());
+  }
+
+  toLocalISODate(d = new Date()) {
+    const date = d instanceof Date ? d : this.parseLocalDate(d) || new Date();
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  }
+
+  daysBetween(fromDate, toDate) {
+    const a = fromDate instanceof Date ? fromDate : this.parseLocalDate(fromDate);
+    const b = toDate instanceof Date ? toDate : this.parseLocalDate(toDate);
+    if (!a || !b) return 0;
+    const utcA = Date.UTC(a.getFullYear(), a.getMonth(), a.getDate());
+    const utcB = Date.UTC(b.getFullYear(), b.getMonth(), b.getDate());
+    return Math.round((utcB - utcA) / (1000 * 60 * 60 * 24));
+  }
+
+  lastSixMonthLabels() {
+    const labels = [];
+    const now = this.todayLocal();
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      labels.push(d.toLocaleDateString('en-US', { month: 'short' }));
+    }
+    return labels;
+  }
+
+  /* ==========================================================================
+     Registry / session
+     ========================================================================== */
   initRegistry() {
     try {
       const existing = localStorage.getItem(this.REGISTRY_KEY);
       if (!existing) {
-        // Create initial registry with ONLY the Demo account
         const demoData = this.getDemoDataset();
         const registry = {
           [this.DEMO_ACCOUNT_ID]: {
             id: this.DEMO_ACCOUNT_ID,
-            email: "vikram@apexenterprise.com",
-            password: "demopass123",
+            email: this.DEMO_EMAIL,
             name: "Vikram Malhotra",
             company: "Apex Enterprise Solutions Pvt. Ltd.",
             createdAt: new Date().toISOString()
           }
         };
         localStorage.setItem(this.REGISTRY_KEY, JSON.stringify(registry));
-        this.saveAccountData(this.DEMO_ACCOUNT_ID, demoData);
+        this.saveAccountData(this.DEMO_ACCOUNT_ID, demoData, { persistRemote: false, silent: true });
       }
     } catch (e) {
       console.warn('LocalStorage error initializing registry:', e);
     }
   }
 
+  _readSessionRaw() {
+    try {
+      const sessionStore = sessionStorage.getItem(this.SESSION_KEY);
+      if (sessionStore) return JSON.parse(sessionStore);
+    } catch (e) { /* ignore */ }
+    try {
+      const persistent = localStorage.getItem(this.SESSION_KEY);
+      if (persistent) return JSON.parse(persistent);
+    } catch (e) { /* ignore */ }
+    return null;
+  }
+
   loadActiveSession() {
     try {
-      const session = localStorage.getItem(this.SESSION_KEY);
-      if (session) {
-        const parsed = JSON.parse(session);
-        if (parsed && parsed.accountId) {
-          return parsed.accountId;
-        }
+      const parsed = this._readSessionRaw();
+      if (parsed && parsed.accountId) {
+        this.sessionToken = parsed.token || null;
+        return parsed.accountId;
       }
     } catch (e) {
       console.warn('Error loading active session:', e);
     }
-    return this.DEMO_ACCOUNT_ID;
+    this.sessionToken = null;
+    return null;
   }
 
-  saveActiveSession(accountId) {
-    this.activeAccountId = accountId;
+  saveActiveSession(accountId, token, options = {}) {
+    this.activeAccountId = accountId || null;
+    this.sessionToken = token || null;
+    const remember = options.remember !== false;
     try {
+      localStorage.removeItem(this.SESSION_KEY);
+      sessionStorage.removeItem(this.SESSION_KEY);
       if (accountId) {
-        localStorage.setItem(this.SESSION_KEY, JSON.stringify({ accountId }));
-      } else {
-        localStorage.removeItem(this.SESSION_KEY);
+        const payload = JSON.stringify({ accountId, token: this.sessionToken || null });
+        if (remember) localStorage.setItem(this.SESSION_KEY, payload);
+        else sessionStorage.setItem(this.SESSION_KEY, payload);
       }
     } catch (e) {
       console.warn('Error saving active session:', e);
@@ -316,6 +382,7 @@ class RecoStore {
   }
 
   getAccountData(accountId) {
+    if (!accountId) return null;
     try {
       const key = `RECO_ACCOUNT_DATA_${accountId}`;
       const raw = localStorage.getItem(key);
@@ -330,7 +397,6 @@ class RecoStore {
       return this.getDemoDataset();
     }
 
-    // Default EMPTY state for new accounts
     return {
       user: {
         id: accountId,
@@ -349,18 +415,83 @@ class RecoStore {
         riskThreshold: 80,
         autoNudge: true
       },
-      baseHistoricalRecovered: 0
+      baseHistoricalRecovered: 0,
+      quarterlyActionPlan: null
     };
   }
 
-  saveAccountData(accountId, data) {
+  saveAccountData(accountId, data, options = {}) {
+    if (!accountId || !data) return false;
     try {
       const key = `RECO_ACCOUNT_DATA_${accountId}`;
       localStorage.setItem(key, JSON.stringify(data));
     } catch (e) {
       console.warn(`Error saving data for account ${accountId}:`, e);
+      return false;
     }
-    this.notify();
+    if (options.persistRemote !== false) {
+      this.queueRemoteSync(accountId, data);
+    }
+    if (!options.silent) this.notify();
+    return true;
+  }
+
+  queueRemoteSync(accountId, data) {
+    if (!accountId || accountId === this.DEMO_ACCOUNT_ID || !this.sessionToken) return;
+    if (this._remoteSyncTimer) clearTimeout(this._remoteSyncTimer);
+    this._remoteSyncTimer = setTimeout(() => {
+      this.syncToBackend(accountId, data);
+    }, 350);
+  }
+
+  async syncToBackend(accountId, data) {
+    if (!this.sessionToken || accountId === this.DEMO_ACCOUNT_ID) return;
+    try {
+      await fetch('/api/account', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${this.sessionToken}`
+        },
+        body: JSON.stringify({ account: data })
+      });
+    } catch (e) {
+      console.warn('Remote account sync skipped:', e.message || e);
+    }
+  }
+
+  async hydrateFromBackend() {
+    if (!this.sessionToken || !this.activeAccountId || this.activeAccountId === this.DEMO_ACCOUNT_ID) {
+      return;
+    }
+    try {
+      const resp = await fetch('/api/account', {
+        headers: { 'Authorization': `Bearer ${this.sessionToken}` }
+      });
+      if (resp.status === 401) {
+        this.saveActiveSession(null, null);
+        return;
+      }
+      if (!resp.ok) return;
+      const payload = await resp.json();
+      if (payload && payload.success && payload.account) {
+        const local = this.getAccountData(this.activeAccountId) || {};
+        const remote = payload.account;
+        const localCount = (local.invoices || []).length + (local.customers || []).length;
+        const remoteCount = (remote.invoices || []).length + (remote.customers || []).length;
+        const merged = remoteCount >= localCount ? {
+          ...remote,
+          user: remote.user || local.user
+        } : {
+          ...local,
+          user: remote.user || local.user
+        };
+        merged.quarterlyActionPlan = remote.quarterlyActionPlan || local.quarterlyActionPlan || null;
+        this.saveAccountData(this.activeAccountId, merged, { persistRemote: remoteCount < localCount, silent: false });
+      }
+    } catch (e) {
+      console.warn('Could not hydrate account from backend:', e.message || e);
+    }
   }
 
   getCurrentAccount() {
@@ -369,11 +500,20 @@ class RecoStore {
   }
 
   saveCurrentAccount(data) {
-    if (!this.activeAccountId) return;
-    this.saveAccountData(this.activeAccountId, data);
+    if (!this.activeAccountId) return false;
+    return this.saveAccountData(this.activeAccountId, data);
   }
 
   get state() {
+    if (!this.activeAccountId) {
+      return {
+        auth: { isAuthenticated: false, user: null },
+        customers: [],
+        invoices: [],
+        notifications: [],
+        settings: {}
+      };
+    }
     const acc = this.getCurrentAccount();
     if (!acc) {
       return {
@@ -386,13 +526,13 @@ class RecoStore {
     }
     return {
       auth: {
-        isAuthenticated: !!this.activeAccountId,
+        isAuthenticated: true,
         user: acc.user
       },
-      customers: acc.customers,
-      invoices: acc.invoices,
-      notifications: acc.notifications,
-      settings: acc.settings
+      customers: acc.customers || [],
+      invoices: acc.invoices || [],
+      notifications: acc.notifications || [],
+      settings: acc.settings || {}
     };
   }
 
@@ -404,24 +544,27 @@ class RecoStore {
   }
 
   notify() {
-    this.listeners.forEach(fn => fn(this.state));
+    this.listeners.forEach(fn => {
+      try { fn(this.state); } catch (e) { console.warn('Store listener error:', e); }
+    });
   }
 
   /* ==========================================================================
      Deterministic AI Risk Scoring Engine (Isolated to Account Ledger)
      ========================================================================== */
   calculateInvoiceRisk(invoice, accountCustomers) {
-    if (invoice.status === 'Paid') {
+    if (!invoice || invoice.status === 'Paid') {
       return { score: 0, level: 'LOW', daysOverdue: 0 };
     }
 
-    const today = new Date('2026-09-03');
-    const dueDate = new Date(invoice.dueDate);
-    const diffTime = today - dueDate;
-    const daysOverdue = Math.max(0, Math.ceil(diffTime / (1000 * 60 * 60 * 24)));
+    const today = this.todayLocal();
+    const dueDate = this.parseLocalDate(invoice.dueDate);
+    const daysOverdue = dueDate ? Math.max(0, this.daysBetween(dueDate, today)) : 0;
 
-    // Look up customer characteristics strictly from this account's customers
-    const cust = (accountCustomers || []).find(c => c.id === invoice.customerId || c.name.toLowerCase() === invoice.customer.toLowerCase()) || {
+    const cust = (accountCustomers || []).find(c =>
+      c.id === invoice.customerId ||
+      (c.name && invoice.customer && c.name.toLowerCase() === String(invoice.customer).toLowerCase())
+    ) || {
       avgDelayDays: 8,
       historyDelayRate: 0.2
     };
@@ -458,7 +601,7 @@ class RecoStore {
      ========================================================================== */
   getComputedMetrics() {
     const acc = this.getCurrentAccount();
-    if (!acc) {
+    if (!acc || !this.activeAccountId) {
       return this.getEmptyMetrics();
     }
 
@@ -469,30 +612,45 @@ class RecoStore {
     let pendingCount = 0;
     let paidCount = 0;
     let recoveredTotal = 0;
+    let upcoming7Count = 0;
+    let upcoming7Amount = 0;
+    let overdueAmount = 0;
+    let weightedOpenDays = 0;
 
-    const enrichedInvoices = acc.invoices.map(inv => {
+    const today = this.todayLocal();
+    const in7 = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 7);
+
+    const enrichedInvoices = (acc.invoices || []).map(inv => {
       const riskInfo = this.calculateInvoiceRisk(inv, acc.customers);
-      const isOverdue = inv.status === 'Overdue' || (inv.status !== 'Paid' && riskInfo.daysOverdue > 0);
+      const isOverdue = inv.status !== 'Paid' && (inv.status === 'Overdue' || riskInfo.daysOverdue > 0);
       const effectiveStatus = inv.status === 'Paid' ? 'Paid' : (isOverdue ? 'Overdue' : 'Pending');
 
       if (effectiveStatus !== 'Paid') {
-        totalOutstanding += inv.amount;
-        if (riskInfo.score >= (acc.settings.riskThreshold || 80)) {
-          atRiskAmount += inv.amount;
+        totalOutstanding += Number(inv.amount) || 0;
+        weightedOpenDays += (riskInfo.daysOverdue || 0) * (Number(inv.amount) || 0);
+        if (riskInfo.score >= (acc.settings && acc.settings.riskThreshold || 80)) {
+          atRiskAmount += Number(inv.amount) || 0;
           highRiskCount++;
         }
         if (effectiveStatus === 'Overdue') {
           overdueCount++;
+          overdueAmount += Number(inv.amount) || 0;
         } else {
           pendingCount++;
+          const due = this.parseLocalDate(inv.dueDate);
+          if (due && due >= today && due <= in7) {
+            upcoming7Count++;
+            upcoming7Amount += Number(inv.amount) || 0;
+          }
         }
       } else {
         paidCount++;
-        recoveredTotal += inv.amount;
+        recoveredTotal += Number(inv.amount) || 0;
       }
 
       return {
         ...inv,
+        amount: Number(inv.amount) || 0,
         status: effectiveStatus,
         daysOverdue: riskInfo.daysOverdue,
         riskScore: riskInfo.score,
@@ -500,32 +658,81 @@ class RecoStore {
       };
     });
 
-    // Monthly Recovery Trends (Calculated for current account)
-    let trendRecovered = [0, 0, 0, 0, 0, 0];
-    let trendAtRisk = [0, 0, 0, 0, 0, 0];
+    const totalInvoiced = totalOutstanding + recoveredTotal;
+    const recoveryRate = totalInvoiced > 0 ? (recoveredTotal / totalInvoiced) * 100 : 0;
+    const highRiskExposurePct = totalOutstanding > 0 ? (atRiskAmount / totalOutstanding) * 100 : 0;
+    const dso = totalOutstanding > 0 ? weightedOpenDays / totalOutstanding : 0;
 
-    if (acc.user.id === this.DEMO_ACCOUNT_ID) {
-      trendRecovered = [4.2, 5.1, 6.4, 5.8, 7.3, Math.max(8.2, +(recoveredTotal / 100000).toFixed(1))];
-      trendAtRisk = [14.8, 13.9, 13.1, 12.8, 12.6, Math.max(12.4, +(atRiskAmount / 100000).toFixed(1))];
-    } else {
-      const curRec = +(recoveredTotal / 100000).toFixed(1);
-      const curRisk = +(atRiskAmount / 100000).toFixed(1);
-      trendRecovered = [0, 0, 0, 0, 0, curRec];
-      trendAtRisk = [0, 0, 0, 0, 0, curRisk];
+    const paidWithDates = enrichedInvoices.filter(inv => inv.status === 'Paid' && inv.issueDate && inv.dueDate);
+    let avgRecoveryCycle = 0;
+    if (paidWithDates.length > 0) {
+      const cycleSum = (acc.customers || []).reduce((sum, c) => sum + (Number(c.avgDelayDays) || 0), 0);
+      avgRecoveryCycle = (acc.customers || []).length > 0
+        ? cycleSum / acc.customers.length
+        : 0;
+    } else if ((acc.customers || []).length > 0) {
+      avgRecoveryCycle = (acc.customers || []).reduce((sum, c) => sum + (Number(c.avgDelayDays) || 0), 0) / acc.customers.length;
     }
 
-    // Breakdown for Doughnut Chart
+    const monthKey = (dateStr) => {
+      const d = this.parseLocalDate(dateStr);
+      if (!d) return null;
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    };
+    const trendLabels = this.lastSixMonthLabels();
+    const trendKeys = [];
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
+      trendKeys.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`);
+    }
+    const trendRecovered = trendKeys.map(() => 0);
+    const trendAtRisk = trendKeys.map(() => 0);
+
+    enrichedInvoices.forEach(inv => {
+      const key = monthKey(inv.status === 'Paid' ? (inv.paidDate || inv.dueDate || inv.issueDate) : (inv.dueDate || inv.issueDate));
+      const idx = trendKeys.indexOf(key);
+      if (idx === -1) return;
+      if (inv.status === 'Paid') trendRecovered[idx] += inv.amount / 100000;
+      else if (inv.riskScore >= (acc.settings && acc.settings.riskThreshold || 80)) trendAtRisk[idx] += inv.amount / 100000;
+    });
+    if (trendAtRisk.every(v => v === 0) && atRiskAmount > 0) {
+      trendAtRisk[trendAtRisk.length - 1] = +(atRiskAmount / 100000).toFixed(1);
+    }
+    if (trendRecovered.every(v => v === 0) && recoveredTotal > 0) {
+      trendRecovered[trendRecovered.length - 1] = +(recoveredTotal / 100000).toFixed(1);
+    }
+
+    const prevRec = trendRecovered[trendRecovered.length - 2] || 0;
+    const curRec = trendRecovered[trendRecovered.length - 1] || +(recoveredTotal / 100000).toFixed(1);
+    let recoveredMomLabel = 'No prior period data';
+    let recoveredMomPositive = false;
+    if (prevRec > 0) {
+      const pct = ((curRec - prevRec) / prevRec) * 100;
+      recoveredMomLabel = `${pct >= 0 ? '+' : ''}${pct.toFixed(1)}% vs last month`;
+      recoveredMomPositive = pct >= 0;
+    } else if (recoveredTotal > 0) {
+      recoveredMomLabel = 'First recovery period';
+      recoveredMomPositive = true;
+    }
+
     let breakdown = {
       labels: ['Recovered', 'Pending (Low/Med Risk)', 'High Risk Overdue'],
       data: [
         +(recoveredTotal / 100000).toFixed(1),
-        +((totalOutstanding - atRiskAmount) / 100000).toFixed(1),
+        +((Math.max(0, totalOutstanding - atRiskAmount)) / 100000).toFixed(1),
         +(atRiskAmount / 100000).toFixed(1)
       ],
       colors: ['#D5B893', '#617891', '#632024']
     };
 
-    // Aging Buckets
+    if (totalInvoiced === 0) {
+      breakdown = {
+        labels: ['No Active Data'],
+        data: [1],
+        colors: ['#617891']
+      };
+    }
+
     let aging = { '0-15d': 0, '16-30d': 0, '31-60d': 0, '60+d': 0 };
     enrichedInvoices.forEach(inv => {
       if (inv.status === 'Overdue') {
@@ -538,14 +745,32 @@ class RecoStore {
       }
     });
 
-    // Enriched Customers strictly derived from this account
-    const enrichedCustomers = acc.customers.map(cust => {
-      const custInvoices = enrichedInvoices.filter(i => i.customerId === cust.id || i.customer.toLowerCase() === cust.name.toLowerCase());
+    const channelBase = Math.max(0, Math.min(100, recoveryRate || 0));
+    const channelRates = (acc.invoices || []).length === 0
+      ? [0, 0, 0, 0]
+      : [
+          Math.max(0, Math.min(100, Math.round(channelBase * 1.08 + 4))),
+          Math.max(0, Math.min(100, Math.round(channelBase * 1.18 + 6))),
+          Math.max(0, Math.min(100, Math.round(channelBase * 0.82 + 2))),
+          Math.max(0, Math.min(100, Math.round(channelBase * 1.22 + 8)))
+        ];
+
+    const enrichedCustomers = (acc.customers || []).map(cust => {
+      const custInvoices = enrichedInvoices.filter(i =>
+        i.customerId === cust.id ||
+        (i.customer && cust.name && i.customer.toLowerCase() === cust.name.toLowerCase())
+      );
       const custOutstanding = custInvoices.filter(i => i.status !== 'Paid').reduce((sum, i) => sum + i.amount, 0);
+      const custPaidSum = custInvoices.filter(i => i.status === 'Paid').reduce((sum, i) => sum + i.amount, 0);
       const custPaidCount = custInvoices.filter(i => i.status === 'Paid').length;
       const onTimeRate = custInvoices.length > 0 ? Math.round((custPaidCount / custInvoices.length) * 100) : 100;
+      const overdueDays = custInvoices.filter(i => i.status === 'Overdue').map(i => i.daysOverdue);
+      const computedAvgDelay = overdueDays.length
+        ? Math.round(overdueDays.reduce((a, b) => a + b, 0) / overdueDays.length)
+        : (cust.avgDelayDays || 0);
+      const recoveredAmt = Math.max(Number(cust.totalRecovered) || 0, custPaidSum);
 
-      const maxRisk = custInvoices.reduce((max, i) => Math.max(max, i.riskScore), 15);
+      const maxRisk = custInvoices.reduce((max, i) => Math.max(max, i.riskScore || 0), custInvoices.length ? 0 : 15);
       const riskLevel = maxRisk >= 80 ? 'HIGH' : (maxRisk >= 50 ? 'MEDIUM' : 'LOW');
 
       return {
@@ -554,7 +779,9 @@ class RecoStore {
         totalOutstandingRaw: custOutstanding,
         invoicesCount: custInvoices.length,
         paidOnTime: `${onTimeRate}%`,
-        avgDelay: `${cust.avgDelayDays || 0} days`,
+        avgDelay: `${computedAvgDelay} days`,
+        avgDelayDays: computedAvgDelay,
+        totalRecovered: recoveredAmt,
         riskScore: maxRisk,
         riskLevel: riskLevel,
         recentInvoices: custInvoices.map(i => i.id)
@@ -562,23 +789,36 @@ class RecoStore {
     });
 
     return {
-      accountId: acc.user.id,
+      accountId: acc.user && acc.user.id,
       isEmpty: enrichedInvoices.length === 0,
       totalOutstandingFormatted: `₹${(totalOutstanding / 100000).toFixed(1)}L`,
       totalOutstandingRaw: totalOutstanding,
       atRiskFormatted: `₹${(atRiskAmount / 100000).toFixed(1)}L`,
       atRiskRaw: atRiskAmount,
       overdueCount: overdueCount,
+      overdueAmountRaw: overdueAmount,
       recoveredThisMonthFormatted: `₹${(recoveredTotal / 100000).toFixed(1)}L`,
       recoveredThisMonthRaw: recoveredTotal,
       highRiskCount: highRiskCount,
       pendingCount: pendingCount,
+      paidCount: paidCount,
       totalInvoicesCount: enrichedInvoices.length,
+      recoveryRate: recoveryRate,
+      recoveryRateFormatted: `${recoveryRate.toFixed(0)}%`,
       recoveryOpportunityFormatted: `₹${((atRiskAmount * 0.55) / 100000).toFixed(1)}L`,
+      upcoming7Count,
+      upcoming7Amount,
+      upcoming7Formatted: `₹${(upcoming7Amount / 100000).toFixed(1)}L`,
+      recoveredMomLabel,
+      recoveredMomPositive,
+      avgRecoveryCycle: avgRecoveryCycle,
+      highRiskExposurePct,
+      dso,
+      channelRates,
       recoveryTrends: {
-        labels: ['March', 'April', 'May', 'June', 'July', 'August'],
-        recovered: trendRecovered,
-        atRisk: trendAtRisk
+        labels: trendLabels,
+        recovered: trendRecovered.map(v => +v.toFixed(1)),
+        atRisk: trendAtRisk.map(v => +v.toFixed(1))
       },
       breakdown: breakdown,
       agingBuckets: [
@@ -601,14 +841,27 @@ class RecoStore {
       atRiskFormatted: "₹0.0L",
       atRiskRaw: 0,
       overdueCount: 0,
+      overdueAmountRaw: 0,
       recoveredThisMonthFormatted: "₹0.0L",
       recoveredThisMonthRaw: 0,
       highRiskCount: 0,
       pendingCount: 0,
+      paidCount: 0,
       totalInvoicesCount: 0,
+      recoveryRate: 0,
+      recoveryRateFormatted: "0%",
       recoveryOpportunityFormatted: "₹0.0L",
+      upcoming7Count: 0,
+      upcoming7Amount: 0,
+      upcoming7Formatted: "₹0.0L",
+      recoveredMomLabel: "No prior period data",
+      recoveredMomPositive: false,
+      avgRecoveryCycle: 0,
+      highRiskExposurePct: 0,
+      dso: 0,
+      channelRates: [0, 0, 0, 0],
       recoveryTrends: {
-        labels: ['March', 'April', 'May', 'June', 'July', 'August'],
+        labels: this.lastSixMonthLabels(),
         recovered: [0, 0, 0, 0, 0, 0],
         atRisk: [0, 0, 0, 0, 0, 0]
       },
@@ -626,24 +879,71 @@ class RecoStore {
   /* ==========================================================================
      CRUD Operations (Strictly isolated by Account ID)
      ========================================================================== */
+  nextInvoiceId(acc) {
+    const nums = (acc.invoices || []).map(i => {
+      const m = String(i.id || '').match(/INV-(\d+)/i);
+      return m ? parseInt(m[1], 10) : 0;
+    });
+    const next = Math.max(1000, ...nums, 1000) + 1;
+    return `INV-${next}`;
+  }
+
+  nextCustomerId() {
+    return `CUST-${Date.now().toString(36).toUpperCase()}`;
+  }
+
+  validateInvoiceInput(invoiceData) {
+    const customer = String(invoiceData.customer || '').trim();
+    const amount = Number(invoiceData.amount);
+    const dueDate = String(invoiceData.dueDate || '').trim();
+    if (!customer) return 'Customer name is required.';
+    if (!Number.isFinite(amount) || amount <= 0) return 'Invoice amount must be a positive number.';
+    if (amount > 10000000000) return 'Invoice amount is unrealistically large.';
+    if (!dueDate || !this.parseLocalDate(dueDate)) return 'Please provide a valid due date.';
+    return null;
+  }
+
+  findCustomer(acc, { customerId, customerName }) {
+    if (customerId) {
+      const byId = acc.customers.find(c => c.id === customerId);
+      if (byId) return byId;
+    }
+    if (customerName) {
+      return acc.customers.find(c => c.name && c.name.toLowerCase() === String(customerName).toLowerCase()) || null;
+    }
+    return null;
+  }
+
+  applyRecoveredDelta(acc, invoice, delta) {
+    if (!invoice || !delta) return;
+    const cust = this.findCustomer(acc, { customerId: invoice.customerId, customerName: invoice.customer });
+    if (cust) {
+      cust.totalRecovered = Math.max(0, (Number(cust.totalRecovered) || 0) + delta);
+    }
+  }
+
   addInvoice(invoiceData) {
     const acc = this.getCurrentAccount();
     if (!acc) return null;
 
-    const accountId = acc.user.id;
-    const newId = `INV-${1000 + acc.invoices.length + 1}`;
+    const error = this.validateInvoiceInput(invoiceData);
+    if (error) return { error };
 
-    // Find or create customer strictly inside this account
-    let cust = acc.customers.find(c => c.name.toLowerCase() === invoiceData.customer.toLowerCase());
-    let customerId = cust ? cust.id : `CUST-${Date.now().toString().slice(-4)}`;
+    const accountId = acc.user.id;
+    const newId = this.nextInvoiceId(acc);
+    const customerName = String(invoiceData.customer).trim();
+
+    let cust = this.findCustomer(acc, { customerName });
+    let customerId = cust ? cust.id : this.nextCustomerId();
 
     if (!cust) {
+      const slug = customerName.toLowerCase().replace(/[^a-z0-9]/g, '');
       const newCustomer = {
         id: customerId,
         accountId: accountId,
-        name: invoiceData.customer,
+        name: customerName,
         category: invoiceData.category || "Corporate Commercial",
-        email: `finance@${invoiceData.customer.toLowerCase().replace(/[^a-z0-9]/g, '')}.com`,
+        email: `finance@${slug || 'client'}.com`,
         phone: "+91 98000 " + Math.floor(10000 + Math.random() * 90000),
         contactPerson: "Finance Lead",
         avgDelayDays: 5,
@@ -653,22 +953,28 @@ class RecoStore {
         aiAssessment: "Newly registered debtor for this account. Active monitoring enabled."
       };
       acc.customers.push(newCustomer);
+      cust = newCustomer;
     }
 
+    const status = invoiceData.status || "Pending";
     const newInvoice = {
       id: newId,
       accountId: accountId,
       customerId: customerId,
-      customer: invoiceData.customer,
-      amount: parseFloat(invoiceData.amount),
-      issueDate: invoiceData.issueDate || new Date().toISOString().split('T')[0],
+      customer: customerName,
+      amount: Number(invoiceData.amount),
+      issueDate: invoiceData.issueDate || this.toLocalISODate(),
       dueDate: invoiceData.dueDate,
-      status: invoiceData.status || "Pending",
+      status,
       recommendedAction: invoiceData.recommendedAction || "Monitor",
       aiNotes: invoiceData.aiNotes || "Newly recorded invoice in account ledger."
     };
 
     acc.invoices.unshift(newInvoice);
+
+    if (status === 'Paid') {
+      this.applyRecoveredDelta(acc, newInvoice, newInvoice.amount);
+    }
 
     const risk = this.calculateInvoiceRisk(newInvoice, acc.customers);
     if (risk.level === 'HIGH') {
@@ -706,10 +1012,55 @@ class RecoStore {
     const index = acc.invoices.findIndex(i => i.id === id);
     if (index === -1) return false;
 
+    const prev = acc.invoices[index];
+    const nextCustomer = updateData.customer !== undefined ? String(updateData.customer).trim() : prev.customer;
+    const nextAmount = updateData.amount !== undefined ? Number(updateData.amount) : Number(prev.amount);
+    const nextDue = updateData.dueDate !== undefined ? String(updateData.dueDate).trim() : prev.dueDate;
+
+    const error = this.validateInvoiceInput({ customer: nextCustomer, amount: nextAmount, dueDate: nextDue });
+    if (error) return { error };
+
+    if (nextCustomer && nextCustomer.toLowerCase() !== String(prev.customer || '').toLowerCase()) {
+      let cust = this.findCustomer(acc, { customerName: nextCustomer });
+      if (!cust) {
+        cust = {
+          id: this.nextCustomerId(),
+          accountId: acc.user.id,
+          name: nextCustomer,
+          category: "Corporate Commercial",
+          email: `finance@${nextCustomer.toLowerCase().replace(/[^a-z0-9]/g, '') || 'client'}.com`,
+          phone: "+91 98000 " + Math.floor(10000 + Math.random() * 90000),
+          contactPerson: "Finance Lead",
+          avgDelayDays: 5,
+          historyDelayRate: 0.1,
+          totalRecovered: 0,
+          riskProgression: [20, 25, 30],
+          aiAssessment: "Debtor reassigned from invoice edit. Active monitoring enabled."
+        };
+        acc.customers.push(cust);
+      }
+      updateData.customerId = cust.id;
+      updateData.customer = nextCustomer;
+    }
+
+    const nextStatus = updateData.status !== undefined ? updateData.status : prev.status;
+    if (prev.status !== 'Paid' && nextStatus === 'Paid') {
+      this.applyRecoveredDelta(acc, { ...prev, customer: nextCustomer, customerId: updateData.customerId || prev.customerId }, nextAmount);
+      updateData.paidDate = this.toLocalISODate();
+      updateData.recommendedAction = updateData.recommendedAction || "Cleared";
+    } else if (prev.status === 'Paid' && nextStatus !== 'Paid') {
+      this.applyRecoveredDelta(acc, prev, -(Number(prev.amount) || 0));
+      updateData.paidDate = null;
+    } else if (prev.status === 'Paid' && nextStatus === 'Paid' && nextAmount !== Number(prev.amount)) {
+      this.applyRecoveredDelta(acc, prev, nextAmount - (Number(prev.amount) || 0));
+    }
+
     acc.invoices[index] = {
-      ...acc.invoices[index],
+      ...prev,
       ...updateData,
-      amount: parseFloat(updateData.amount !== undefined ? updateData.amount : acc.invoices[index].amount)
+      amount: nextAmount,
+      customer: nextCustomer,
+      dueDate: nextDue
     };
 
     this.saveCurrentAccount(acc);
@@ -722,6 +1073,10 @@ class RecoStore {
 
     const inv = acc.invoices.find(i => i.id === id);
     if (!inv) return false;
+
+    if (inv.status === 'Paid') {
+      this.applyRecoveredDelta(acc, inv, -(Number(inv.amount) || 0));
+    }
 
     acc.invoices = acc.invoices.filter(i => i.id !== id);
     acc.notifications.unshift({
@@ -745,21 +1100,28 @@ class RecoStore {
 
     const inv = acc.invoices.find(i => i.id === id);
     if (!inv) return false;
+    if (inv.status === newStatus) return true;
 
+    const prevStatus = inv.status;
     inv.status = newStatus;
-    if (newStatus === 'Paid') {
+    if (newStatus === 'Paid' && prevStatus !== 'Paid') {
       inv.recommendedAction = "Cleared";
-      inv.aiNotes = `Settled and cleared on ${new Date().toLocaleDateString('en-US')}.`;
+      inv.paidDate = this.toLocalISODate();
+      inv.aiNotes = `Settled and cleared on ${this.todayLocal().toLocaleDateString('en-US')}.`;
+      this.applyRecoveredDelta(acc, inv, Number(inv.amount) || 0);
       acc.notifications.unshift({
         id: `NOTIF-${Date.now()}`,
         accountId: acc.user.id,
         type: 'recovery',
         title: 'REVENUE RECOVERED',
-        message: `₹${inv.amount.toLocaleString('en-IN')} recovered for Invoice #${inv.id} (${inv.customer}).`,
+        message: `₹${Number(inv.amount).toLocaleString('en-IN')} recovered for Invoice #${inv.id} (${inv.customer}).`,
         timestamp: "Just now",
         read: false,
         invoiceId: inv.id
       });
+    } else if (prevStatus === 'Paid' && newStatus !== 'Paid') {
+      this.applyRecoveredDelta(acc, inv, -(Number(inv.amount) || 0));
+      inv.paidDate = null;
     }
 
     this.saveCurrentAccount(acc);
@@ -773,6 +1135,15 @@ class RecoStore {
     this.saveCurrentAccount(acc);
   }
 
+  markNotificationRead(id) {
+    const acc = this.getCurrentAccount();
+    if (!acc) return;
+    const notif = acc.notifications.find(n => n.id === id);
+    if (!notif || notif.read) return;
+    notif.read = true;
+    this.saveCurrentAccount(acc);
+  }
+
   updateSettings(settingsData) {
     const acc = this.getCurrentAccount();
     if (!acc) return;
@@ -783,51 +1154,149 @@ class RecoStore {
     this.saveCurrentAccount(acc);
   }
 
+  getQuarterlyActionPlan() {
+    const acc = this.getCurrentAccount();
+    if (!acc || !acc.quarterlyActionPlan || typeof acc.quarterlyActionPlan !== 'object') return null;
+    return acc.quarterlyActionPlan;
+  }
+
+  strategyFingerprint(plan) {
+    if (!plan) return '';
+    const levers = Array.isArray(plan.levers) ? plan.levers.slice().map(l => String(l)).sort() : [];
+    return `${Number(plan.recoveryTarget) || 0}|${levers.join('|')}`;
+  }
+
+  async applyQuarterlyStrategy(plan) {
+    const acc = this.getCurrentAccount();
+    if (!acc || !this.activeAccountId || !plan) {
+      return { success: false, message: 'Unable to save strategy. Please try again.' };
+    }
+
+    const nextPlan = {
+      accountId: this.activeAccountId,
+      recoveryTarget: Number(plan.recoveryTarget),
+      projectedRecoveryFormatted: String(plan.projectedRecoveryFormatted || ''),
+      currentRecoveryFormatted: String(plan.currentRecoveryFormatted || ''),
+      additionalRecoveryFormatted: String(plan.additionalRecoveryFormatted || ''),
+      outstandingFormatted: String(plan.outstandingFormatted || ''),
+      recoveryRateFormatted: String(plan.recoveryRateFormatted || ''),
+      unrecoveredFormatted: String(plan.unrecoveredFormatted || ''),
+      levers: Array.isArray(plan.levers) ? plan.levers.slice() : [],
+      status: 'ACTIVE',
+      appliedAt: new Date().toISOString()
+    };
+
+    const existing = acc.quarterlyActionPlan;
+    if (existing && existing.status === 'ACTIVE' && this.strategyFingerprint(existing) === this.strategyFingerprint(nextPlan)) {
+      return { success: true, alreadyActive: true, plan: existing };
+    }
+
+    const previous = existing || null;
+    acc.quarterlyActionPlan = nextPlan;
+    const saved = this.saveAccountData(this.activeAccountId, acc, { persistRemote: false });
+    if (!saved) {
+      return { success: false, message: 'Unable to save strategy. Please try again.' };
+    }
+
+    if (this.sessionToken && this.activeAccountId !== this.DEMO_ACCOUNT_ID) {
+      try {
+        const resp = await fetch('/api/account', {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${this.sessionToken}`
+          },
+          body: JSON.stringify({ account: acc })
+        });
+        if (!resp.ok) {
+          throw new Error('remote save failed');
+        }
+      } catch (e) {
+        acc.quarterlyActionPlan = previous;
+        this.saveAccountData(this.activeAccountId, acc, { persistRemote: false });
+        return { success: false, message: 'Unable to save strategy. Please try again.' };
+      }
+    }
+
+    return { success: true, alreadyActive: false, plan: nextPlan };
+  }
+
   /* ==========================================================================
      Authentication & Multi-Account Switching (with Real Backend Email API)
      ========================================================================== */
-  async login(email, password) {
+  async sha256Hex(text) {
+    if (window.crypto && window.crypto.subtle) {
+      const buf = await window.crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
+      return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+    let hash = 5381;
+    const s = String(text);
+    for (let i = 0; i < s.length; i++) hash = ((hash << 5) + hash) + s.charCodeAt(i);
+    return (hash >>> 0).toString(16);
+  }
+
+  async login(email, password, options = {}) {
     if (!email || !password) {
       return { success: false, message: "Please provide both email and password." };
     }
 
     const normalizedEmail = email.trim().toLowerCase();
+    const remember = options.remember !== false;
 
-    // Check Demo Account Shortcut
-    if (normalizedEmail === "vikram@apexenterprise.com") {
-      this.saveActiveSession(this.DEMO_ACCOUNT_ID);
-      return { success: true, accountId: this.DEMO_ACCOUNT_ID };
+    if (normalizedEmail === this.DEMO_EMAIL) {
+      if (password !== this.DEMO_PASSWORD) {
+        return { success: false, message: "Incorrect password. Please try again." };
+      }
     }
 
-    // Try Backend API First
     try {
       const resp = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: normalizedEmail, password })
       });
-      const data = await resp.json();
+      const data = await resp.json().catch(() => ({}));
       if (resp.ok && data.success) {
-        this.saveActiveSession(data.accountId);
+        if (data.accountId !== this.DEMO_ACCOUNT_ID && data.user) {
+          const existing = this.getAccountData(data.accountId);
+          if (!existing || !existing.user || !existing.user.email) {
+            this.initLocalEmptyAccount(data.accountId, data.user.name, data.user.email, data.user.company, null);
+          } else if (existing.user) {
+            existing.user = { ...existing.user, ...data.user };
+            this.saveAccountData(data.accountId, existing, { persistRemote: false, silent: true });
+          }
+        }
+        this.saveActiveSession(data.accountId, data.token, { remember });
+        await this.hydrateFromBackend();
         return { success: true, accountId: data.accountId };
-      } else if (!resp.ok) {
+      }
+      if (!resp.ok) {
         return { success: false, message: data.message || "Login failed." };
       }
     } catch (apiErr) {
       console.warn('Backend API login offline, falling back to local registry:', apiErr);
     }
 
-    // Fallback: Look up in Local Accounts Registry
     try {
       const registryRaw = localStorage.getItem(this.REGISTRY_KEY);
       const registry = registryRaw ? JSON.parse(registryRaw) : {};
-      
-      const accountEntry = Object.values(registry).find(a => a.email.toLowerCase() === normalizedEmail);
+      const accountEntry = Object.values(registry).find(a => a.email && a.email.toLowerCase() === normalizedEmail);
       if (accountEntry) {
-        if (accountEntry.password && accountEntry.password !== password) {
-          return { success: false, message: "Incorrect password. Please try again." };
+        if (normalizedEmail === this.DEMO_EMAIL) {
+          this.saveActiveSession(this.DEMO_ACCOUNT_ID, null, { remember });
+          return { success: true, accountId: this.DEMO_ACCOUNT_ID };
         }
-        this.saveActiveSession(accountEntry.id);
+        if (accountEntry.passwordHash) {
+          const candidate = await this.sha256Hex(`${normalizedEmail}::${password}`);
+          if (candidate !== accountEntry.passwordHash) {
+            return { success: false, message: "Incorrect password. Please try again." };
+          }
+        } else if (accountEntry.password && accountEntry.password !== password) {
+          return { success: false, message: "Incorrect password. Please try again." };
+        } else if (!accountEntry.passwordHash && !accountEntry.password) {
+          return { success: false, message: "Cannot verify this account offline. Please try again when the server is available." };
+        }
+        this.saveActiveSession(accountEntry.id, null, { remember });
         return { success: true, accountId: accountEntry.id };
       }
     } catch (e) {
@@ -846,8 +1315,11 @@ class RecoStore {
     }
 
     const normalizedEmail = email.trim().toLowerCase();
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(normalizedEmail)) {
+      return { success: false, message: "Please enter a valid email address." };
+    }
 
-    // 1. Try Backend API (With Real Transactional Welcome Email)
     try {
       const resp = await fetch('/api/auth/signup', {
         method: 'POST',
@@ -860,10 +1332,9 @@ class RecoStore {
         })
       });
 
-      const data = await resp.json();
+      const data = await resp.json().catch(() => ({}));
 
       if (!resp.ok || !data.success) {
-        // e.g. Duplicate account error: "An account with this email already exists. Please log in instead."
         return {
           success: false,
           error: data.error,
@@ -871,12 +1342,10 @@ class RecoStore {
         };
       }
 
-      // Backend created account successfully!
       const newAccountId = data.accountId;
-
-      // Sync local isolated store for this account
-      this.initLocalEmptyAccount(newAccountId, name, normalizedEmail, company, password);
-      this.saveActiveSession(newAccountId);
+      this.initLocalEmptyAccount(newAccountId, name.trim(), normalizedEmail, company, null);
+      this.saveActiveSession(newAccountId, data.token, { remember: true });
+      await this.hydrateFromBackend();
 
       return {
         success: true,
@@ -884,20 +1353,18 @@ class RecoStore {
         emailSent: data.emailSent,
         message: data.message
       };
-
     } catch (apiErr) {
       console.warn('Backend API signup offline, performing local registration:', apiErr);
     }
 
-    // 2. Fallback for standalone/offline execution
     let registry = {};
     try {
       const raw = localStorage.getItem(this.REGISTRY_KEY);
       if (raw) registry = JSON.parse(raw);
-    } catch (e) {}
+    } catch (e) { /* ignore */ }
 
-    const existing = Object.values(registry).find(a => a.email.toLowerCase() === normalizedEmail);
-    if (existing || normalizedEmail === 'vikram@apexenterprise.com') {
+    const existing = Object.values(registry).find(a => a.email && a.email.toLowerCase() === normalizedEmail);
+    if (existing || normalizedEmail === this.DEMO_EMAIL) {
       return {
         success: false,
         message: "An account with this email already exists. Please log in instead."
@@ -905,8 +1372,9 @@ class RecoStore {
     }
 
     const newAccountId = `acc_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
-    this.initLocalEmptyAccount(newAccountId, name, normalizedEmail, company, password);
-    this.saveActiveSession(newAccountId);
+    const passwordHash = await this.sha256Hex(`${normalizedEmail}::${password}`);
+    this.initLocalEmptyAccount(newAccountId, name.trim(), normalizedEmail, company, null, passwordHash);
+    this.saveActiveSession(newAccountId, null, { remember: true });
 
     return {
       success: true,
@@ -916,22 +1384,26 @@ class RecoStore {
     };
   }
 
-  initLocalEmptyAccount(newAccountId, name, normalizedEmail, company, password) {
+  initLocalEmptyAccount(newAccountId, name, normalizedEmail, company, password, passwordHash) {
     let registry = {};
     try {
       const raw = localStorage.getItem(this.REGISTRY_KEY);
       if (raw) registry = JSON.parse(raw);
-    } catch (e) {}
+    } catch (e) { /* ignore */ }
 
     registry[newAccountId] = {
       id: newAccountId,
       email: normalizedEmail,
-      password: password,
       name: name,
       company: company || "Enterprise Corp",
       createdAt: new Date().toISOString()
     };
-    localStorage.setItem(this.REGISTRY_KEY, JSON.stringify(registry));
+    if (passwordHash) registry[newAccountId].passwordHash = passwordHash;
+    try {
+      localStorage.setItem(this.REGISTRY_KEY, JSON.stringify(registry));
+    } catch (e) {
+      console.warn('Could not persist account registry:', e);
+    }
 
     const emptyAccountData = {
       user: {
@@ -962,22 +1434,29 @@ class RecoStore {
         riskThreshold: 80,
         autoNudge: true
       },
-      baseHistoricalRecovered: 0
+      baseHistoricalRecovered: 0,
+      quarterlyActionPlan: null
     };
 
-    this.saveAccountData(newAccountId, emptyAccountData);
+    this.saveAccountData(newAccountId, emptyAccountData, { persistRemote: false, silent: true });
   }
 
   logout() {
-    this.saveActiveSession(null);
+    const token = this.sessionToken;
+    this.saveActiveSession(null, null);
+    if (token) {
+      fetch('/api/auth/logout', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` }
+      }).catch(() => {});
+    }
   }
 
   resetDemoAccount() {
     const demoData = this.getDemoDataset();
-    this.saveAccountData(this.DEMO_ACCOUNT_ID, demoData);
-    this.saveActiveSession(this.DEMO_ACCOUNT_ID);
+    this.saveAccountData(this.DEMO_ACCOUNT_ID, demoData, { persistRemote: false });
+    this.saveActiveSession(this.DEMO_ACCOUNT_ID, this.sessionToken, { remember: true });
   }
 }
 
-// Global Store Singleton
 window.recoStore = new RecoStore();
