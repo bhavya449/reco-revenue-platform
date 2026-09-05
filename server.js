@@ -12,6 +12,7 @@ const crypto = require('crypto');
 const { sendWelcomeEmail } = require('./services/emailService');
 
 const app = express();
+app.set('etag', false);
 const PORT = process.env.PORT || 8080;
 const DATA_DIR = path.join(__dirname, 'data');
 const DB_FILE = path.join(DATA_DIR, 'db.json');
@@ -236,14 +237,15 @@ const staticNoCache = {
 app.use('/css', express.static(path.join(__dirname, 'css'), staticNoCache));
 app.use('/js', express.static(path.join(__dirname, 'js'), staticNoCache));
 
-app.get('/', (req, res) => {
+function sendIndex(req, res) {
   disableClientCache(res);
-  res.sendFile(path.join(__dirname, 'index.html'));
-});
-app.get('/index.html', (req, res) => {
-  disableClientCache(res);
-  res.sendFile(path.join(__dirname, 'index.html'));
-});
+  res.removeHeader('ETag');
+  const html = fs.readFileSync(path.join(__dirname, 'index.html'), 'utf8');
+  res.type('html').send(html);
+}
+
+app.get('/', sendIndex);
+app.get('/index.html', sendIndex);
 
 /* ==========================================================================
    API Authentication Routes
@@ -469,10 +471,7 @@ app.use('/api', (req, res) => {
   res.status(404).json({ success: false, message: 'API route not found.' });
 });
 
-app.get('*', (req, res) => {
-  disableClientCache(res);
-  res.sendFile(path.join(__dirname, 'index.html'));
-});
+app.get('*', sendIndex);
 
 app.use((err, req, res, next) => {
   if (err instanceof SyntaxError && 'body' in err) {

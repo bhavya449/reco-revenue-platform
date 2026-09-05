@@ -3,6 +3,17 @@
    Multi-Tenant Account Data Isolation Architecture & Financial Engine
    ========================================================================== */
 
+(function interceptLegacyApplyAlert() {
+  var nativeAlert = window.alert.bind(window);
+  window.alert = function (message) {
+    if (String(message || '').indexOf('Simulation strategy blueprint') !== -1) {
+      if (typeof window.recoApplyStrategy === 'function') window.recoApplyStrategy();
+      return;
+    }
+    return nativeAlert.apply(window, arguments);
+  };
+})();
+
 class RecoStore {
   constructor() {
     this.REGISTRY_KEY = 'RECO_ACCOUNTS_REGISTRY_V2';

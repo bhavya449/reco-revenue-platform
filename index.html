@@ -16,7 +16,7 @@
 
   <!-- Master Stylesheet -->
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <link rel="stylesheet" href="css/style.css?v=qap4">
+  <link rel="stylesheet" href="css/style.css?v=qap5">
 </head>
 <body>
 
@@ -1369,7 +1369,178 @@
   <div id="toast-container" class="toast-container"></div>
 
   <!-- JavaScript Application Modules -->
-  <script src="js/store.js?v=qap4"></script>
-  <script src="js/app.js?v=qap4"></script>
+  <script>
+  (function () {
+    var OLD = 'Simulation strategy blueprint';
+    var busy = false;
+    var nativeAlert = window.alert.bind(window);
+    window.alert = function (message) {
+      if (String(message || '').indexOf(OLD) !== -1) {
+        if (window.recoApplyStrategy) window.recoApplyStrategy();
+        return;
+      }
+      return nativeAlert.apply(window, arguments);
+    };
+
+    function toast(msg, danger) {
+      var c = document.getElementById('toast-container');
+      if (!c) {
+        c = document.createElement('div');
+        c.id = 'toast-container';
+        c.className = 'toast-container';
+        document.body.appendChild(c);
+      }
+      var t = document.createElement('div');
+      t.className = 'toast' + (danger ? ' toast-danger' : '');
+      t.textContent = msg;
+      c.appendChild(t);
+      setTimeout(function () { if (t.parentNode) t.parentNode.removeChild(t); }, 4200);
+    }
+
+    function selectedLevers() {
+      return Array.prototype.map.call(
+        document.querySelectorAll('#view-simulator input[type="checkbox"]:checked'),
+        function (el) {
+          return el.getAttribute('data-lever') || (el.nextElementSibling ? el.nextElementSibling.textContent : '');
+        }
+      ).map(function (s) { return String(s).trim(); }).filter(Boolean);
+    }
+
+    function fillPlan(plan) {
+      var emptyEl = document.getElementById('qap-empty-state');
+      var activeEl = document.getElementById('qap-active-state');
+      var badgeEl = document.getElementById('qap-status-badge');
+      if (!plan) {
+        if (emptyEl) emptyEl.style.display = 'block';
+        if (activeEl) activeEl.style.display = 'none';
+        if (badgeEl) badgeEl.style.display = 'none';
+        return;
+      }
+      if (emptyEl) emptyEl.style.display = 'none';
+      if (activeEl) activeEl.style.display = 'block';
+      if (badgeEl) badgeEl.style.display = 'inline-flex';
+      function set(id, v) { var el = document.getElementById(id); if (el) el.textContent = v; }
+      set('qap-target', plan.recoveryTarget + '%');
+      set('qap-projected', plan.projectedRecoveryFormatted || '—');
+      set('qap-current', plan.currentRecoveryFormatted || '—');
+      set('qap-additional', plan.additionalRecoveryFormatted || '—');
+      set('qap-status', plan.status || 'ACTIVE');
+      set('qap-applied', 'Today');
+      var list = document.getElementById('qap-levers-list');
+      if (list) {
+        list.innerHTML = '';
+        (plan.levers || []).forEach(function (label) {
+          var li = document.createElement('li');
+          li.textContent = label;
+          list.appendChild(li);
+        });
+      }
+      var summary = document.getElementById('sim-applied-summary');
+      if (summary) {
+        summary.style.display = 'block';
+        summary.textContent = 'Strategy Applied Successfully — ' + plan.recoveryTarget + '% recovery target is ACTIVE in your Quarterly Action Plan.';
+      }
+      var btn = document.getElementById('btn-apply-strategy');
+      if (btn) btn.textContent = '✓ Strategy Applied';
+    }
+
+    window.recoApplyStrategy = function () {
+      if (busy) return;
+      busy = true;
+      var store = window.recoStore;
+      var slider = document.getElementById('recovery-target-slider');
+      var target = slider ? parseInt(slider.value, 10) : 85;
+      if (!isFinite(target)) target = 85;
+      var draft = {
+        recoveryTarget: target,
+        projectedRecoveryFormatted: (document.getElementById('sim-projected-value') || {}).textContent || '',
+        currentRecoveryFormatted: (document.getElementById('sim-current-recovery') || {}).textContent || '',
+        additionalRecoveryFormatted: (document.getElementById('sim-additional-value') || {}).textContent || '',
+        outstandingFormatted: '',
+        recoveryRateFormatted: (document.getElementById('sim-current-rate') || {}).textContent || '',
+        unrecoveredFormatted: (document.getElementById('sim-unrecovered-value') || {}).textContent || '',
+        levers: selectedLevers()
+      };
+      var pending;
+      try {
+        if (store && typeof store.applyQuarterlyStrategy === 'function') {
+          pending = store.applyQuarterlyStrategy(draft);
+        } else {
+          pending = { success: false };
+        }
+      } catch (e) {
+        pending = { success: false };
+      }
+      Promise.resolve(pending).then(function (res) {
+        var plan = (store && store.getQuarterlyActionPlan && store.getQuarterlyActionPlan()) || (res && res.plan) || null;
+        if (res && res.success) {
+          if (res.alreadyActive) toast('This strategy is already active.');
+          else toast('Strategy Applied Successfully. Your ' + target + '% recovery strategy has been added to your Quarterly Action Plan.');
+          fillPlan(plan);
+          var card = document.getElementById('quarterly-action-plan-card');
+          if (card) card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+          return;
+        }
+        if (store && store.activeAccountId && store.getCurrentAccount && store.saveCurrentAccount) {
+          var acc = store.getCurrentAccount();
+          if (acc) {
+            acc.quarterlyActionPlan = {
+              accountId: store.activeAccountId,
+              recoveryTarget: target,
+              projectedRecoveryFormatted: draft.projectedRecoveryFormatted,
+              currentRecoveryFormatted: draft.currentRecoveryFormatted,
+              additionalRecoveryFormatted: draft.additionalRecoveryFormatted,
+              outstandingFormatted: draft.outstandingFormatted,
+              recoveryRateFormatted: draft.recoveryRateFormatted,
+              unrecoveredFormatted: draft.unrecoveredFormatted,
+              levers: draft.levers,
+              status: 'ACTIVE',
+              appliedAt: new Date().toISOString()
+            };
+            var saved = store.saveCurrentAccount(acc);
+            if (saved !== false) {
+              toast('Strategy Applied Successfully. Your ' + target + '% recovery strategy has been added to your Quarterly Action Plan.');
+              fillPlan(acc.quarterlyActionPlan);
+              return;
+            }
+          }
+        }
+        toast('Unable to save strategy. Please try again.', true);
+      }).catch(function () {
+        toast('Unable to save strategy. Please try again.', true);
+      }).then(function () {
+        busy = false;
+      });
+    };
+
+    document.addEventListener('click', function (e) {
+      var btn = e.target && e.target.closest ? e.target.closest('button') : null;
+      if (!btn) return;
+      var oc = btn.getAttribute('onclick') || '';
+      var label = (btn.textContent || '').replace(/\s+/g, ' ').trim();
+      var isApply = btn.id === 'btn-apply-strategy' || oc.indexOf(OLD) !== -1 || label === 'Apply Strategy' || label.indexOf('Strategy Applied') !== -1;
+      if (!isApply) return;
+      if (btn.id !== 'btn-apply-strategy' && oc.indexOf(OLD) === -1 && !btn.closest('#view-simulator')) return;
+      e.preventDefault();
+      e.stopPropagation();
+      if (typeof e.stopImmediatePropagation === 'function') e.stopImmediatePropagation();
+      btn.removeAttribute('onclick');
+      window.recoApplyStrategy();
+    }, true);
+
+    document.addEventListener('DOMContentLoaded', function () {
+      document.querySelectorAll('button').forEach(function (btn) {
+        var oc = btn.getAttribute('onclick') || '';
+        if (oc.indexOf(OLD) !== -1) {
+          btn.removeAttribute('onclick');
+          btn.id = btn.id || 'btn-apply-strategy';
+        }
+      });
+    });
+  })();
+  </script>
+
+  <script src="js/store.js?v=qap5"></script>
+  <script src="js/app.js?v=qap5"></script>
 </body>
 </html>
