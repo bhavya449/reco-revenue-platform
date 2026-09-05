@@ -134,16 +134,25 @@ document.addEventListener('DOMContentLoaded', () => {
       if (fallback) fallback.classList.add('active-view');
     }
 
-    // Toggle Landing / App Layout Shell
+    // Toggle Landing / App Layout Shell & Auth Views
     const appShell = document.getElementById('app-shell-container');
     const landingView = document.getElementById('view-landing');
+    const sidebar = document.getElementById('app-sidebar');
+    const topbar = document.querySelector('.app-topbar');
 
     if (viewName === 'landing') {
       if (appShell) appShell.style.display = 'none';
       if (landingView) landingView.style.display = 'block';
+    } else if (viewName === 'login' || viewName === 'signup') {
+      if (appShell) appShell.style.display = 'flex';
+      if (landingView) landingView.style.display = 'none';
+      if (sidebar) sidebar.style.display = 'none';
+      if (topbar) topbar.style.display = 'none';
     } else {
       if (appShell) appShell.style.display = 'flex';
       if (landingView) landingView.style.display = 'none';
+      if (sidebar) sidebar.style.display = 'flex';
+      if (topbar) topbar.style.display = 'flex';
     }
 
     // Update sidebar navigation active links
@@ -183,15 +192,23 @@ document.addEventListener('DOMContentLoaded', () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
 
     // Close mobile sidebar if open
-    const sidebar = document.getElementById('app-sidebar');
-    if (sidebar && sidebar.classList.contains('mobile-open')) {
-      sidebar.classList.remove('mobile-open');
+    const mobileSidebar = document.getElementById('app-sidebar');
+    if (mobileSidebar && mobileSidebar.classList.contains('mobile-open')) {
+      mobileSidebar.classList.remove('mobile-open');
     }
   }
 
   function updateUserDisplay() {
     const user = store.state.auth.user;
-    if (!user) return;
+    if (!user) {
+      const nameEls = document.querySelectorAll('.user-name-display');
+      nameEls.forEach(el => el.textContent = "Sign In");
+      const roleEls = document.querySelectorAll('.user-role-display');
+      roleEls.forEach(el => el.textContent = "Unauthenticated Visitor");
+      const avatarEls = document.querySelectorAll('.user-avatar-display');
+      avatarEls.forEach(el => el.textContent = "—");
+      return;
+    }
 
     const isDemo = store.isDemoSession();
 
