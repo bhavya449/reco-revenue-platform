@@ -34,7 +34,6 @@
         <a href="#landing">Home</a>
         <a href="#dashboard" data-nav="dashboard">Command Center</a>
         <a href="#copilot" data-nav="copilot">AI Copilot</a>
-        <a href="#simulator" data-nav="simulator">Simulator</a>
         <a href="#reports" data-nav="reports">Analytics</a>
       </nav>
 
@@ -224,11 +223,6 @@
         <a href="#copilot" class="nav-item" data-view="copilot" data-nav="copilot">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z"/></svg>
           AI Copilot
-        </a>
-
-        <a href="#simulator" class="nav-item" data-view="simulator" data-nav="simulator">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10"/><polygon points="12 6 12 12 16 14"/></svg>
-          Simulator
         </a>
 
         <a href="#reports" class="nav-item" data-view="reports" data-nav="reports">
@@ -1305,7 +1299,7 @@
 
       <div class="modal-footer">
         <button class="btn btn-secondary" onclick="document.getElementById('ai-analysis-modal-backdrop').classList.remove('active')">Close</button>
-        <button class="btn btn-tan" onclick="document.getElementById('ai-analysis-modal-backdrop').classList.remove('active'); window.location.hash='#simulator';">Run Simulator →</button>
+        <button class="btn btn-tan" onclick="document.getElementById('ai-analysis-modal-backdrop').classList.remove('active'); window.location.hash='#copilot';">Open AI Copilot →</button>
       </div>
     </div>
   </div>
