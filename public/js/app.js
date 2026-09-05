@@ -41,11 +41,42 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function handleRoute() {
     const hash = window.location.hash.replace('#', '') || 'landing';
-    navigateTo(hash);
+    if (hash === 'signup') {
+      navigateTo('login');
+      switchAuthTab('signup');
+    } else if (hash === 'login') {
+      navigateTo('login');
+      switchAuthTab('login');
+    } else {
+      navigateTo(hash);
+    }
+  }
+
+  function switchAuthTab(mode) {
+    const authTabLogin = document.getElementById('auth-tab-login');
+    const authTabSignup = document.getElementById('auth-tab-signup');
+    const loginForm = document.getElementById('login-form');
+    const signupForm = document.getElementById('signup-form');
+
+    if (!authTabLogin || !authTabSignup || !loginForm || !signupForm) return;
+
+    if (mode === 'signup') {
+      authTabSignup.classList.add('active');
+      authTabLogin.classList.remove('active');
+      loginForm.style.display = 'none';
+      signupForm.style.display = 'block';
+      uiState.authMode = 'signup';
+    } else {
+      authTabLogin.classList.add('active');
+      authTabSignup.classList.remove('active');
+      loginForm.style.display = 'block';
+      signupForm.style.display = 'none';
+      uiState.authMode = 'login';
+    }
   }
 
   function navigateTo(viewName) {
-    const publicViews = ['landing', 'login'];
+    const publicViews = ['landing', 'login', 'signup'];
     const isAuth = store.state.auth.isAuthenticated;
 
     // Route Guard for Protected Pages
@@ -2057,19 +2088,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (authTabLogin && authTabSignup && loginForm && signupForm) {
       authTabLogin.addEventListener('click', () => {
-        authTabLogin.classList.add('active');
-        authTabSignup.classList.remove('active');
-        loginForm.style.display = 'block';
-        signupForm.style.display = 'none';
-        uiState.authMode = 'login';
+        window.location.hash = '#login';
+        switchAuthTab('login');
       });
 
       authTabSignup.addEventListener('click', () => {
-        authTabSignup.classList.add('active');
-        authTabLogin.classList.remove('active');
-        loginForm.style.display = 'none';
-        signupForm.style.display = 'block';
-        uiState.authMode = 'signup';
+        window.location.hash = '#signup';
+        switchAuthTab('signup');
       });
     }
 
