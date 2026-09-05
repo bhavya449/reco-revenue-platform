@@ -15,7 +15,8 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
   <!-- Master Stylesheet -->
-  <link rel="stylesheet" href="css/style.css">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <link rel="stylesheet" href="css/style.css?v=qap3">
 </head>
 <body>
 
@@ -849,6 +850,7 @@
                   Apply Strategy
                 </button>
               </div>
+              <div id="sim-applied-summary" class="sim-applied-summary" style="display:none;"></div>
             </div>
           </div>
 
@@ -1366,39 +1368,7 @@
   <div id="toast-container" class="toast-container"></div>
 
   <!-- JavaScript Application Modules -->
-  <script src="js/store.js"></script>
-  <script src="js/app.js"></script>
-</body>
-</html>
-color: var(--caput-mortuum); font-size: 0.88rem;">Key Vulnerability:</strong>
-            <p id="ai-analysis-vulnerability" style="font-size: 0.88rem; color: var(--space-cadet); margin-top: 2px;">
-              High-risk exposure will appear here once invoices are recorded.
-            </p>
-          </div>
-
-          <div style="border-left: 4px solid var(--tan-dark); padding: 12px 16px; background: var(--tan-15); border-radius: 6px;">
-            <strong style="color: var(--coffee-dark); font-size: 0.88rem;">Recommended Action Plan:</strong>
-            <p id="ai-analysis-plan" style="font-size: 0.88rem; color: var(--space-cadet); margin-top: 2px;">
-              1. Enable automated WhatsApp pre-due reminders 48h before due dates.<br>
-              2. Offer 2% early settlement discount to high-aging accounts.<br>
-              3. Trigger executive escalation on invoices overdue by more than 14 days.
-            </p>
-          </div>
-        </div>
-      </div>
-
-      <div class="modal-footer">
-        <button class="btn btn-secondary" onclick="document.getElementById('ai-analysis-modal-backdrop').classList.remove('active')">Close</button>
-        <button class="btn btn-tan" onclick="document.getElementById('ai-analysis-modal-backdrop').classList.remove('active'); window.location.hash='#simulator';">Run Simulator →</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Toast Notification Container -->
-  <div id="toast-container" class="toast-container"></div>
-
-  <!-- JavaScript Application Modules -->
-  <script src="js/store.js"></script>
-  <script src="js/app.js"></script>
+  <script src="js/store.js?v=qap3"></script>
+  <script src="js/app.js?v=qap3"></script>
 </body>
 </html>

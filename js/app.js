@@ -206,6 +206,8 @@ document.addEventListener('DOMContentLoaded', () => {
     } else if (viewName === 'customers') {
       renderCustomersGrid(metrics);
     } else if (viewName === 'simulator') {
+      ensureQuarterlyActionPlanCard();
+      hydrateSimulatorFromSavedPlan();
       updateSimulatorMath(uiState.simulatorTargetRate);
       renderQuarterlyActionPlan();
       syncApplyStrategyButton();
@@ -1142,6 +1144,50 @@ Collections Department | ${store.state.auth.user ? store.state.auth.user.company
       .filter(Boolean);
   }
 
+  function ensureQuarterlyActionPlanCard() {
+    const view = document.getElementById('view-simulator');
+    if (!view || document.getElementById('quarterly-action-plan-card')) return;
+    const article = document.createElement('article');
+    article.id = 'quarterly-action-plan-card';
+    article.className = 'action-plan-card';
+    article.innerHTML = '<div class="action-plan-header"><div><div class="action-plan-kicker">Current workspace</div><h3>Quarterly Action Plan</h3></div><span id="qap-status-badge" class="badge badge-paid" style="display:none;">ACTIVE</span></div><div id="qap-empty-state" class="action-plan-empty">No strategy has been applied yet. Adjust the recovery target and levers above, then click Apply Strategy to save a plan for this account.</div><div id="qap-active-state" style="display:none;"><div class="action-plan-metrics"><div class="action-plan-metric"><label>Recovery Target</label><strong id="qap-target">—</strong></div><div class="action-plan-metric"><label>Projected Recovery</label><strong id="qap-projected">—</strong></div><div class="action-plan-metric"><label>Current Recovery</label><strong id="qap-current">—</strong></div><div class="action-plan-metric"><label>Potential Additional</label><strong id="qap-additional">—</strong></div></div><div class="action-plan-levers-label">Selected Recovery Levers</div><ul id="qap-levers-list" class="action-plan-levers"></ul><div class="action-plan-meta"><span>Status: <strong id="qap-status">ACTIVE</strong></span><span>Applied: <strong id="qap-applied">—</strong></span></div></div>';
+    view.appendChild(article);
+  }
+
+  function hydrateSimulatorFromSavedPlan() {
+    const plan = store.getQuarterlyActionPlan();
+    if (!plan || !Number(plan.recoveryTarget)) return;
+    uiState.simulatorTargetRate = Number(plan.recoveryTarget);
+    const slider = document.getElementById('recovery-target-slider');
+    if (slider) slider.value = String(plan.recoveryTarget);
+    const wanted = new Set((plan.levers || []).map(String));
+    if (wanted.size) {
+      document.querySelectorAll('.sim-lever-checkbox').forEach(box => {
+        box.checked = wanted.has(box.getAttribute('data-lever') || '');
+      });
+    }
+  }
+
+  function updateAppliedSummary(plan) {
+    const summary = document.getElementById('sim-applied-summary');
+    if (!summary) return;
+    if (!plan) {
+      summary.style.display = 'none';
+      summary.textContent = '';
+      return;
+    }
+    const leverCount = Array.isArray(plan.levers) ? plan.levers.length : 0;
+    summary.style.display = 'block';
+    summary.textContent = `Strategy Applied Successfully — ${plan.recoveryTarget}% recovery target is ACTIVE in your Quarterly Action Plan (${leverCount} lever${leverCount === 1 ? '' : 's'}).`;
+  }
+
+  function isApplyStrategyButton(el) {
+    if (!el || el.tagName !== 'BUTTON') return false;
+    if (el.id === 'btn-apply-strategy') return true;
+    const label = (el.textContent || '').replace(/\s+/g, ' ').trim();
+    return label === 'Apply Strategy' || label === 'Strategy Applied' || label.indexOf('Apply Strategy') !== -1 || label.indexOf('Strategy Applied') !== -1;
+  }
+
   function collectCurrentStrategyDraft() {
     const metrics = store.getComputedMetrics();
     const targetPercent = Number(uiState.simulatorTargetRate) || 85;
@@ -1184,6 +1230,7 @@ Collections Department | ${store.state.auth.user ? store.state.auth.user.company
       if (emptyEl) emptyEl.style.display = 'block';
       if (activeEl) activeEl.style.display = 'none';
       if (badgeEl) badgeEl.style.display = 'none';
+      updateAppliedSummary(null);
       return;
     }
 
@@ -1203,9 +1250,9 @@ Collections Department | ${store.state.auth.user ? store.state.auth.user.company
     setText('qap-applied', formatAppliedAt(plan.appliedAt));
 
     const list = document.getElementById('qap-levers-list');
+    const levers = Array.isArray(plan.levers) ? plan.levers : [];
     if (list) {
       list.innerHTML = '';
-      const levers = Array.isArray(plan.levers) ? plan.levers : [];
       if (levers.length === 0) {
         const li = document.createElement('li');
         li.textContent = 'No recovery levers selected.';
@@ -1218,6 +1265,7 @@ Collections Department | ${store.state.auth.user ? store.state.auth.user.company
         });
       }
     }
+    updateAppliedSummary(plan);
   }
 
   function syncApplyStrategyButton() {
@@ -1231,9 +1279,16 @@ Collections Department | ${store.state.auth.user ? store.state.auth.user.company
   }
 
   async function applySimulatorStrategy() {
-    const btn = document.getElementById('btn-apply-strategy');
-    if (btn) btn.disabled = true;
+    if (applySimulatorStrategy._busy) return;
+    applySimulatorStrategy._busy = true;
+    const btn = document.getElementById('btn-apply-strategy') || Array.from(document.querySelectorAll('#view-simulator button')).find(isApplyStrategyButton);
+    if (btn) {
+      btn.id = 'btn-apply-strategy';
+      btn.removeAttribute('onclick');
+      btn.disabled = true;
+    }
     try {
+      ensureQuarterlyActionPlanCard();
       const draft = collectCurrentStrategyDraft();
       const result = await store.applyQuarterlyStrategy(draft);
       if (!result || !result.success) {
@@ -1254,6 +1309,7 @@ Collections Department | ${store.state.auth.user ? store.state.auth.user.company
       showToast('Unable to save strategy. Please try again.', 'danger');
     } finally {
       if (btn) btn.disabled = false;
+      applySimulatorStrategy._busy = false;
     }
   }
 
@@ -1744,10 +1800,23 @@ Collections Department | ${store.state.auth.user ? store.state.auth.user.company
       box.addEventListener('change', () => syncApplyStrategyButton());
     });
 
-    const applyStrategyBtn = document.getElementById('btn-apply-strategy');
-    if (applyStrategyBtn) {
-      applyStrategyBtn.addEventListener('click', applySimulatorStrategy);
-    }
+    const nativeAlert = window.alert.bind(window);
+    window.alert = function(message) {
+      if (String(message || '').includes('Simulation strategy blueprint saved')) {
+        applySimulatorStrategy();
+        return;
+      }
+      return nativeAlert(message);
+    };
+
+    document.addEventListener('click', (e) => {
+      const btn = e.target.closest('button');
+      if (!isApplyStrategyButton(btn)) return;
+      if (!btn.closest('#view-simulator') && btn.id !== 'btn-apply-strategy') return;
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      applySimulatorStrategy();
+    }, true);
 
     // Export Reports
     const exportBtn = document.getElementById('btn-export-report');
