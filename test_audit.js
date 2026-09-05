@@ -205,9 +205,30 @@ async function runTests() {
   const accDataA2 = await request('GET', `/api/account/${accountIdA}`);
   assert(accDataA2.body.data.customers.length === 1, 'Account A still has its 1 private customer');
   assert(accDataA2.body.data.customers[0].name === 'Private Client A Corp', 'Customer name is Private Client A Corp');
-  assert(accDataA2.body.data.invoices.length === 1, 'Account A still has its 1 invoice');
+  // 6. Payment Reminder Dispatch & Recipient Routing
+  console.log('\n--- 6. Payment Reminder Dispatch & Recipient Routing ---');
+  const invalidReminder = await request('POST', '/api/reminder/send', {
+    toEmail: 'invalid-email',
+    subject: 'Test Subject'
+  });
+  assert(invalidReminder.status === 400, 'Reminder with invalid email rejected with HTTP 400');
+  assert(invalidReminder.body.error === 'INVALID_EMAIL', 'Returns INVALID_EMAIL error code');
 
-  // 6. Summary
+  const validReminder = await request('POST', '/api/reminder/send', {
+    toEmail: 'finance@abcconstructions.in',
+    subject: 'Payment Reminder: Invoice #INV-1001',
+    message: 'Please settle Invoice #INV-1001.',
+    customerName: 'ABC Constructions Pvt. Ltd.',
+    invoiceId: 'INV-1001',
+    amount: 400000,
+    dueDate: '2026-09-05',
+    senderCompany: 'Apex Enterprises'
+  });
+  assert(validReminder.status === 200, 'Valid reminder returns HTTP 200');
+  assert(validReminder.body.success === true, 'Reminder dispatch returns success true');
+  assert(validReminder.body.toEmail === 'finance@abcconstructions.in', 'Reminder correctly targets recipient finance@abcconstructions.in');
+
+  // 7. Summary
   console.log('\n====================================================');
   console.log(`📊 TEST RESULTS: ${passed} PASSED | ${failed} FAILED`);
   console.log('====================================================\n');

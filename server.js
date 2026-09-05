@@ -8,7 +8,7 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
-const { sendWelcomeEmail } = require('./services/emailService');
+const { sendWelcomeEmail, sendPaymentReminderEmail } = require('./services/emailService');
 
 const app = express();
 const PORT = process.env.PORT || 8080;
@@ -295,6 +295,52 @@ app.put('/api/account/:id', (req, res) => {
   } catch (err) {
     console.error('[PUT ACCOUNT ERROR]', err);
     return res.status(500).json({ success: false, message: 'Server error saving account data' });
+  }
+});
+
+/**
+ * POST /api/reminder/send
+ * Dispatches payment reminder email to customer recipient
+ */
+app.post('/api/reminder/send', async (req, res) => {
+  try {
+    const { toEmail, subject, message, customerName, invoiceId, amount, dueDate, senderCompany } = req.body;
+
+    if (!toEmail || !toEmail.includes('@')) {
+      return res.status(400).json({
+        success: false,
+        error: 'INVALID_EMAIL',
+        message: 'A valid recipient email address is required.'
+      });
+    }
+
+    const normalizedTo = toEmail.trim().toLowerCase();
+
+    const result = await sendPaymentReminderEmail({
+      toEmail: normalizedTo,
+      subject: subject || `Payment Reminder: Invoice #${invoiceId || ''}`,
+      message: message || '',
+      customerName: customerName || 'Finance Team',
+      invoiceId: invoiceId || 'N/A',
+      amount: amount || '',
+      dueDate: dueDate || '',
+      senderCompany: senderCompany || 'RECO Financial'
+    });
+
+    return res.json({
+      success: result.success,
+      toEmail: normalizedTo,
+      emailSent: result.success && !result.simulated,
+      messageId: result.messageId || null,
+      message: result.message || `Payment reminder dispatched to ${normalizedTo}.`
+    });
+  } catch (err) {
+    console.error('[REMINDER EMAIL ROUTE ERROR]', err);
+    return res.status(500).json({
+      success: false,
+      error: 'SERVER_ERROR',
+      message: 'Failed to process reminder email delivery.'
+    });
   }
 });
 

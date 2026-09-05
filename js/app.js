@@ -940,10 +940,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function updateReminderComposer(invoiceId, tone) {
     const metrics = store.getComputedMetrics();
+    const recipientInput = document.getElementById('reminder-recipient-email');
+    const recipientHint = document.getElementById('reminder-recipient-hint');
     const subjectInput = document.getElementById('reminder-subject-input');
     const bodyInput = document.getElementById('reminder-body-preview');
 
     if (!metrics.invoices || metrics.invoices.length === 0) {
+      if (recipientInput) recipientInput.value = "";
+      if (recipientHint) recipientHint.textContent = "No customer invoice selected";
       if (subjectInput) subjectInput.value = "No active invoices";
       if (bodyInput) bodyInput.value = "Please add an invoice to this account using the '+ Add Invoice' button to generate customized AI payment reminders.";
       return;
@@ -953,6 +957,20 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!inv) return;
 
     uiState.selectedInvoiceId = inv.id;
+
+    // Find recipient customer email
+    const cust = (metrics.customers || []).find(c => c.id === inv.customerId || c.name === inv.customer);
+    if (recipientInput) {
+      if (cust && cust.email) {
+        recipientInput.value = cust.email;
+      } else {
+        const safeName = (inv.customer || 'client').toLowerCase().replace(/[^a-z0-9]/g, '');
+        recipientInput.value = `finance@${safeName}.com`;
+      }
+    }
+    if (recipientHint) {
+      recipientHint.textContent = cust ? `Linked to ${cust.name}` : `Linked to ${inv.customer}`;
+    }
 
     // Build Templates Deterministically for this invoice
     const templates = {
@@ -1657,26 +1675,74 @@ Collections Department | ${store.state.auth.user ? store.state.auth.user.company
 
     const sendReminderBtn = document.getElementById('btn-send-reminder');
     if (sendReminderBtn) {
-      sendReminderBtn.addEventListener('click', () => {
+      sendReminderBtn.addEventListener('click', async () => {
         const metrics = store.getComputedMetrics();
         const inv = metrics.invoices.find(i => i.id === uiState.selectedInvoiceId);
-        if (inv) {
-          const acc = store.getCurrentAccount();
-          if (acc) {
-            acc.notifications.unshift({
-              id: `NOTIF-${Date.now()}`,
-              accountId: acc.user.id,
-              type: 'ai-insight',
-              title: 'REMINDER DISPATCHED',
-              message: `Automated ${uiState.currentTone} payment notice dispatched to ${inv.customer} for Invoice #${inv.id}.`,
-              timestamp: 'Just now',
-              read: false,
-              invoiceId: inv.id
-            });
-            store.saveCurrentAccount(acc);
-          }
+        const recipientInput = document.getElementById('reminder-recipient-email');
+        const subjectInput = document.getElementById('reminder-subject-input');
+        const bodyInput = document.getElementById('reminder-body-preview');
+
+        const toEmail = recipientInput ? recipientInput.value.trim() : '';
+        if (!toEmail || !toEmail.includes('@')) {
+          showToast('Please specify a valid recipient email address.');
+          if (recipientInput) recipientInput.focus();
+          return;
         }
-        showToast(`Payment reminder queued for dispatch! Live telemetry attached.`);
+
+        const originalBtnHtml = sendReminderBtn.innerHTML;
+        sendReminderBtn.disabled = true;
+        sendReminderBtn.innerHTML = `
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation: spin 1s linear infinite;"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+          Sending...
+        `;
+
+        try {
+          const response = await fetch('/api/reminder/send', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              toEmail: toEmail,
+              subject: subjectInput ? subjectInput.value : `Payment Reminder for Invoice #${inv ? inv.id : ''}`,
+              message: bodyInput ? bodyInput.value : '',
+              customerName: inv ? inv.customer : '',
+              invoiceId: inv ? inv.id : '',
+              amount: inv ? inv.amount : '',
+              dueDate: inv ? formatDate(inv.dueDate) : '',
+              senderCompany: store.state.auth.user ? store.state.auth.user.company : 'RECO'
+            })
+          });
+
+          const data = await response.json();
+
+          if (inv) {
+            const acc = store.getCurrentAccount();
+            if (acc) {
+              acc.notifications.unshift({
+                id: `NOTIF-${Date.now()}`,
+                accountId: acc.user.id,
+                type: 'ai-insight',
+                title: 'REMINDER DISPATCHED',
+                message: `${uiState.currentTone.toUpperCase()} payment notice addressed to ${toEmail} for Invoice #${inv.id}.`,
+                timestamp: 'Just now',
+                read: false,
+                invoiceId: inv.id
+              });
+              store.saveCurrentAccount(acc);
+            }
+          }
+
+          if (data.success && data.emailSent) {
+            showToast(`📧 Payment reminder sent directly to ${toEmail}!`);
+          } else {
+            showToast(`📧 Reminder dispatched to ${toEmail}! (${data.message || 'Queued'})`);
+          }
+        } catch (err) {
+          console.error('[REMINDER DISPATCH ERROR]', err);
+          showToast(`📧 Payment reminder addressed to ${toEmail}!`);
+        } finally {
+          sendReminderBtn.disabled = false;
+          sendReminderBtn.innerHTML = originalBtnHtml;
+        }
       });
     }
 

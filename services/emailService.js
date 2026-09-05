@@ -153,6 +153,217 @@ Recover Revenue. Smarter.
 }
 
 /**
+ * Generates the luxury-fintech styled HTML template for Payment Reminder emails.
+ */
+function generatePaymentReminderEmailHtml({ toEmail, subject, message, customerName, invoiceId, amount, dueDate, senderCompany }) {
+  // Convert newlines to HTML paragraphs
+  const formattedParagraphs = (message || '')
+    .split('\n\n')
+    .filter(p => p.trim())
+    .map(p => `<p style="margin: 0 0 14px; font-size: 15px; line-height: 1.6; color: #25344F;">${p.replace(/\n/g, '<br>')}</p>`)
+    .join('');
+
+  return `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${subject || 'Payment Reminder'}</title>
+</head>
+<body style="margin: 0; padding: 0; background-color: #FAF8F5; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased; color: #25344F;">
+  <table width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #FAF8F5; padding: 40px 16px;">
+    <tr>
+      <td align="center">
+        <!-- Main Email Container -->
+        <table width="100%" border="0" cellspacing="0" cellpadding="0" style="max-width: 600px; background-color: #FFFFFF; border-radius: 16px; border: 1px solid rgba(213, 184, 147, 0.4); overflow: hidden; box-shadow: 0 10px 30px rgba(37, 52, 79, 0.08);">
+          
+          <!-- Header Banner (Space Cadet Navy) -->
+          <tr>
+            <td style="background-color: #25344F; padding: 28px 36px; text-align: left; border-bottom: 3px solid #D5B893;">
+              <table width="100%" border="0" cellspacing="0" cellpadding="0">
+                <tr>
+                  <td>
+                    <!-- Brand Name -->
+                    <table border="0" cellspacing="0" cellpadding="0">
+                      <tr>
+                        <td style="width: 34px; height: 34px; background-color: rgba(213, 184, 147, 0.15); border: 1.5px solid #D5B893; border-radius: 8px; text-align: center; vertical-align: middle; color: #D5B893; font-weight: 800; font-size: 16px; font-family: 'Outfit', sans-serif;">
+                          R
+                        </td>
+                        <td style="padding-left: 12px; color: #FFFFFF; font-size: 20px; font-weight: 800; letter-spacing: 0.04em;">
+                          ${senderCompany || 'RECO Financial'}
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                  <td align="right" style="color: #D5B893; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em;">
+                    Accounts Department
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Invoice Snapshot Banner -->
+          ${invoiceId ? `
+          <tr>
+            <td style="background-color: #F4EFEB; padding: 16px 36px; border-bottom: 1px solid rgba(213, 184, 147, 0.3);">
+              <table width="100%" border="0" cellspacing="0" cellpadding="0">
+                <tr>
+                  <td>
+                    <div style="font-size: 11px; text-transform: uppercase; font-weight: 700; color: #6F4D38; letter-spacing: 0.05em;">Invoice Reference</div>
+                    <div style="font-size: 15px; font-weight: 700; color: #25344F;">#${invoiceId}</div>
+                  </td>
+                  ${amount ? `
+                  <td align="center">
+                    <div style="font-size: 11px; text-transform: uppercase; font-weight: 700; color: #6F4D38; letter-spacing: 0.05em;">Amount Outstanding</div>
+                    <div style="font-size: 15px; font-weight: 800; color: #632024;">₹${typeof amount === 'number' ? amount.toLocaleString('en-IN') : amount}</div>
+                  </td>` : ''}
+                  ${dueDate ? `
+                  <td align="right">
+                    <div style="font-size: 11px; text-transform: uppercase; font-weight: 700; color: #6F4D38; letter-spacing: 0.05em;">Maturity Date</div>
+                    <div style="font-size: 14px; font-weight: 600; color: #25344F;">${dueDate}</div>
+                  </td>` : ''}
+                </tr>
+              </table>
+            </td>
+          </tr>` : ''}
+
+          <!-- Main Content Body -->
+          <tr>
+            <td style="padding: 32px 36px 24px;">
+              <div style="font-size: 13px; font-weight: 600; color: #617891; margin-bottom: 18px; padding-bottom: 12px; border-bottom: 1px solid #FAF8F5;">
+                Recipient: <span style="color: #25344F; font-weight: 700;">${customerName ? `${customerName} (${toEmail})` : toEmail}</span>
+              </div>
+
+              ${formattedParagraphs}
+
+              <!-- Settlement Notice Box -->
+              <table width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #FAF8F5; border-radius: 8px; border: 1px solid rgba(97, 120, 145, 0.2); padding: 16px; margin: 24px 0 16px;">
+                <tr>
+                  <td>
+                    <div style="font-size: 12px; font-weight: 700; color: #25344F; margin-bottom: 4px;">
+                      Remittance Instructions
+                    </div>
+                    <div style="font-size: 13px; line-height: 1.5; color: #617891;">
+                      Please forward your Unique Transaction Reference (UTR) or payment confirmation receipt in reply to this communication to ensure automated ledger reconciliation.
+                    </div>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="background-color: #FAF8F5; padding: 20px 36px; text-align: center; border-top: 1px solid rgba(97, 120, 145, 0.15); color: #617891; font-size: 12px; line-height: 1.5;">
+              Sent via RECO Enterprise Revenue Recovery Operations<br>
+              ${senderCompany ? `${senderCompany} · ` : ''}Confidential & Privileged Financial Communication
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+  `;
+}
+
+/**
+ * Plain text fallback version of payment reminder email.
+ */
+function generatePaymentReminderEmailText({ toEmail, subject, message, customerName, invoiceId, amount, senderCompany }) {
+  return `${subject || 'Payment Reminder'}
+
+To: ${customerName ? `${customerName} <${toEmail}>` : toEmail}
+From: ${senderCompany || 'RECO Financial'}
+${invoiceId ? `Invoice: #${invoiceId}` : ''}
+${amount ? `Amount: ₹${amount}` : ''}
+
+${message || ''}
+
+---
+Please reply with your UTR or payment reference number.
+Sent via RECO Enterprise Revenue Recovery Operations`;
+}
+
+/**
+ * Dispatches payment reminder email to customer recipient via Resend API or SMTP Transport.
+ * @returns {Promise<{ success: boolean, messageId?: string, error?: string, message?: string }>}
+ */
+async function sendPaymentReminderEmail({ toEmail, subject, message, customerName, invoiceId, amount, dueDate, senderCompany }) {
+  const fromEmail = process.env.EMAIL_FROM || 'RECO Reminders <onboarding@resend.dev>';
+  const htmlContent = generatePaymentReminderEmailHtml({ toEmail, subject, message, customerName, invoiceId, amount, dueDate, senderCompany });
+  const textContent = generatePaymentReminderEmailText({ toEmail, subject, message, customerName, invoiceId, amount, senderCompany });
+
+  const resendApiKey = process.env.RESEND_API_KEY || process.env.EMAIL_API_KEY;
+
+  // 1. Try Resend Service if API Key is configured
+  if (resendApiKey && resendApiKey !== 're_your_api_key_here') {
+    try {
+      const resend = new Resend(resendApiKey);
+      const response = await resend.emails.send({
+        from: fromEmail,
+        to: toEmail,
+        subject: subject,
+        html: htmlContent,
+        text: textContent
+      });
+
+      if (response.error) {
+        console.error('[REMINDER EMAIL ERROR] Resend API rejected message:', response.error);
+        return { success: false, error: response.error.message || 'Resend delivery failed' };
+      }
+
+      console.log(`[REMINDER EMAIL SUCCESS] Real payment reminder sent via Resend to ${toEmail} for Invoice #${invoiceId} (Message ID: ${response.data ? response.data.id : 'OK'})`);
+      return { success: true, messageId: response.data ? response.data.id : 'SENT' };
+    } catch (err) {
+      console.error('[REMINDER EMAIL ERROR] Exception sending with Resend:', err.message);
+      return { success: false, error: err.message };
+    }
+  }
+
+  // 2. Try SMTP Transport if SMTP Credentials are configured
+  if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS) {
+    try {
+      const transporter = nodemailer.createTransport({
+        host: process.env.SMTP_HOST,
+        port: parseInt(process.env.SMTP_PORT || '587', 10),
+        secure: process.env.SMTP_PORT === '465',
+        auth: {
+          user: process.env.SMTP_USER,
+          pass: process.env.SMTP_PASS
+        }
+      });
+
+      const info = await transporter.sendMail({
+        from: fromEmail,
+        to: toEmail,
+        subject: subject,
+        html: htmlContent,
+        text: textContent
+      });
+
+      console.log(`[REMINDER EMAIL SUCCESS] Real payment reminder sent via SMTP to ${toEmail} for Invoice #${invoiceId} (Message ID: ${info.messageId})`);
+      return { success: true, messageId: info.messageId };
+    } catch (err) {
+      console.error('[REMINDER EMAIL ERROR] Exception sending with SMTP:', err.message);
+      return { success: false, error: err.message };
+    }
+  }
+
+  // 3. No Email Provider Credentials Configured (Dev / Demonstration Mode)
+  console.log(`[REMINDER DISPATCH] Reminder prepared and addressed directly to customer recipient: ${toEmail} (Subject: "${subject}")`);
+  return {
+    success: true,
+    simulated: true,
+    messageId: `queued_${Date.now()}`,
+    message: `Reminder addressed to ${toEmail}. Live network delivery requires RESEND_API_KEY or SMTP credentials in .env.`
+  };
+}
+
+/**
  * Dispatches real welcome email using Resend API or SMTP Transport.
  * @returns {Promise<{ success: boolean, messageId?: string, error?: string }>}
  */
@@ -231,6 +442,10 @@ async function sendWelcomeEmail({ userName, userEmail }) {
 
 module.exports = {
   sendWelcomeEmail,
+  sendPaymentReminderEmail,
   generateWelcomeEmailHtml,
-  generateWelcomeEmailText
+  generateWelcomeEmailText,
+  generatePaymentReminderEmailHtml,
+  generatePaymentReminderEmailText
 };
+
