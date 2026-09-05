@@ -723,14 +723,23 @@
                 </div>
 
                 <!-- Recipient Email (To) -->
-                <div class="form-group" style="margin-bottom: 12px;">
-                  <label class="form-label" style="display: flex; justify-content: space-between; align-items: center;">
-                    <span>Recipient Email (To):</span>
-                    <span id="reminder-recipient-hint" style="font-size: 0.75rem; color: var(--slate-gray); font-weight: 500;">Customer Accounts Payable</span>
+                <div class="form-group" style="margin-bottom: 14px;">
+                  <label class="form-label" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                    <span style="font-weight: 700;">Recipient Email (To):</span>
+                    <span id="reminder-recipient-hint" class="badge" style="font-size: 0.73rem; background: rgba(97, 120, 145, 0.1); color: var(--slate-gray); font-weight: 600; padding: 2px 8px; border-radius: 4px;">Customer AP</span>
                   </label>
                   <div style="position: relative;">
                     <input type="email" id="reminder-recipient-email" class="form-control" placeholder="finance@customer.com" style="font-size: 0.85rem; padding-left: 34px;" required>
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--slate-gray); pointer-events: none;"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+                  </div>
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 6px; flex-wrap: wrap; gap: 6px;">
+                    <button type="button" id="btn-use-my-email" class="btn btn-xs" style="background: rgba(213, 184, 147, 0.15); border: 1px solid var(--tan); color: var(--space-cadet); font-size: 0.74rem; font-weight: 600; padding: 4px 9px; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 5px;">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                      <span>Send to My Email (<strong id="my-account-email-label">your account email</strong>)</span>
+                    </button>
+                    <button type="button" id="btn-reset-recipient-email" class="btn btn-xs btn-ghost" style="font-size: 0.72rem; color: var(--slate-gray); background: transparent; border: none; cursor: pointer; text-decoration: underline;">
+                      Reset to Customer Email
+                    </button>
                   </div>
                 </div>
 
@@ -1055,6 +1064,34 @@
                   <label class="form-label">Sender Email / Name (From Header):</label>
                   <input type="text" id="settings-email-from" class="form-control" placeholder="RECO Onboarding <onboarding@resend.dev>" style="font-size: 0.85rem;">
                 </div>
+
+                <details style="margin: 16px 0; background: #FAF8F5; padding: 14px 16px; border-radius: 10px; border: 1px solid rgba(213, 184, 147, 0.4);">
+                  <summary style="font-size: 0.85rem; font-weight: 700; color: var(--space-cadet); cursor: pointer; display: flex; align-items: center; justify-content: space-between;">
+                    <span>⚡ Or Configure Direct Gmail / Custom SMTP (Free Alternative)</span>
+                    <span style="font-size: 0.72rem; color: var(--tan); text-decoration: underline;">Configure SMTP ▾</span>
+                  </summary>
+                  <div style="margin-top: 14px; display: grid; grid-template-columns: 2fr 1fr; gap: 12px;">
+                    <div class="form-group" style="margin-bottom: 8px;">
+                      <label class="form-label" style="font-size: 0.78rem;">SMTP Host</label>
+                      <input type="text" id="settings-smtp-host" class="form-control" placeholder="smtp.gmail.com" style="font-size: 0.82rem;">
+                    </div>
+                    <div class="form-group" style="margin-bottom: 8px;">
+                      <label class="form-label" style="font-size: 0.78rem;">Port</label>
+                      <input type="text" id="settings-smtp-port" class="form-control" placeholder="465" style="font-size: 0.82rem;">
+                    </div>
+                  </div>
+                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 6px;">
+                    <div class="form-group" style="margin-bottom: 8px;">
+                      <label class="form-label" style="font-size: 0.78rem;">SMTP Username / Gmail Address</label>
+                      <input type="email" id="settings-smtp-user" class="form-control" placeholder="your.name@gmail.com" style="font-size: 0.82rem;">
+                    </div>
+                    <div class="form-group" style="margin-bottom: 8px;">
+                      <label class="form-label" style="font-size: 0.78rem;">Google 16-Char App Password</label>
+                      <input type="password" id="settings-smtp-pass" class="form-control" placeholder="abcd efgh ijkl mnop" style="font-size: 0.82rem;">
+                    </div>
+                  </div>
+                  <small style="color: var(--slate-gray); font-size: 0.74rem; display: block; margin-top: 4px;">For Gmail: Generate an App Password in your <a href="https://myaccount.google.com/apppasswords" target="_blank" rel="noopener noreferrer" style="color: var(--space-cadet); text-decoration: underline; font-weight: 600;">Google Account Security ↗</a></small>
+                </details>
 
                 <!-- Test Email Transmitter Box -->
                 <div style="margin-top: 16px; background: #FAF8F5; padding: 14px 18px; border-radius: 10px; border: 1px solid rgba(213, 184, 147, 0.4); display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">

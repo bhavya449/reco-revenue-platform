@@ -15,6 +15,7 @@ document.addEventListener('DOMContentLoaded', () => {
     selectedInvoiceId: null,
     selectedCustomerId: null,
     currentTone: 'formal',
+    customRecipientEmail: null,
     notificationFilter: 'all',
     authMode: 'login'
   };
@@ -139,6 +140,11 @@ document.addEventListener('DOMContentLoaded', () => {
       const initials = (user.name || "U").split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
       el.textContent = initials;
     });
+
+    const myEmailLabel = document.getElementById('my-account-email-label');
+    if (myEmailLabel && user.email) {
+      myEmailLabel.textContent = user.email;
+    }
 
     // Update notification badge count in sidebar
     const unreadCount = store.state.notifications.filter(n => !n.read).length;
@@ -934,11 +940,63 @@ document.addEventListener('DOMContentLoaded', () => {
 
     selectEl.addEventListener('change', (e) => {
       uiState.selectedInvoiceId = e.target.value;
-      updateReminderComposer(uiState.selectedInvoiceId, uiState.currentTone);
+      const currentUser = store.state.auth.user;
+      const isPersonalTest = currentUser && uiState.customRecipientEmail === currentUser.email;
+      updateReminderComposer(uiState.selectedInvoiceId, uiState.currentTone, !isPersonalTest);
     });
   }
 
-  function updateReminderComposer(invoiceId, tone) {
+  function updateReminderRecipientField(inv, forceReset = false) {
+    const recipientInput = document.getElementById('reminder-recipient-email');
+    const recipientHint = document.getElementById('reminder-recipient-hint');
+    const myEmailLabel = document.getElementById('my-account-email-label');
+    const currentUser = store.state.auth.user;
+    const userEmail = currentUser ? currentUser.email : '';
+
+    if (myEmailLabel && userEmail) {
+      myEmailLabel.textContent = userEmail;
+    }
+
+    if (!inv) {
+      if (recipientInput) recipientInput.value = "";
+      if (recipientHint) recipientHint.innerHTML = `<span style="color: var(--slate-gray);">No invoice selected</span>`;
+      return;
+    }
+
+    const metrics = store.getComputedMetrics();
+    const cust = (metrics.customers || []).find(c => c.id === inv.customerId || c.name === inv.customer);
+    const safeName = (inv.customer || 'client').toLowerCase().replace(/[^a-z0-9]/g, '');
+    const defaultCustEmail = (cust && cust.email) ? cust.email : `finance@${safeName}.com`;
+
+    if (forceReset) {
+      uiState.customRecipientEmail = null;
+      if (recipientInput) recipientInput.value = defaultCustEmail;
+    } else if (uiState.customRecipientEmail !== null && uiState.customRecipientEmail !== undefined) {
+      if (recipientInput && recipientInput.value !== uiState.customRecipientEmail) {
+        recipientInput.value = uiState.customRecipientEmail;
+      }
+    } else {
+      if (recipientInput && !recipientInput.value) {
+        recipientInput.value = defaultCustEmail;
+      }
+    }
+
+    // Dynamic Hint Badge Calculation
+    const currentVal = (recipientInput ? recipientInput.value.trim() : '').toLowerCase();
+    if (recipientHint) {
+      if (userEmail && currentVal === userEmail.toLowerCase()) {
+        recipientHint.innerHTML = `<span style="color: #2e7d32; font-weight: 700;">👤 Test Recipient (Your Account)</span>`;
+      } else if (currentVal === defaultCustEmail.toLowerCase() || (cust && cust.email && currentVal === cust.email.toLowerCase())) {
+        recipientHint.innerHTML = `<span style="color: var(--slate-gray); font-weight: 600;">🏢 Customer AP (${escapeHtml(cust ? cust.name : inv.customer)})</span>`;
+      } else if (currentVal) {
+        recipientHint.innerHTML = `<span style="color: var(--tan); font-weight: 600;">✉️ Custom Recipient</span>`;
+      } else {
+        recipientHint.innerHTML = `<span style="color: var(--slate-gray);">Customer AP (${escapeHtml(inv.customer)})</span>`;
+      }
+    }
+  }
+
+  function updateReminderComposer(invoiceId, tone, resetRecipient = false) {
     const metrics = store.getComputedMetrics();
     const recipientInput = document.getElementById('reminder-recipient-email');
     const recipientHint = document.getElementById('reminder-recipient-hint');
@@ -947,7 +1005,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (!metrics.invoices || metrics.invoices.length === 0) {
       if (recipientInput) recipientInput.value = "";
-      if (recipientHint) recipientHint.textContent = "No customer invoice selected";
+      if (recipientHint) recipientHint.innerHTML = `<span style="color: var(--slate-gray);">No customer invoice selected</span>`;
       if (subjectInput) subjectInput.value = "No active invoices";
       if (bodyInput) bodyInput.value = "Please add an invoice to this account using the '+ Add Invoice' button to generate customized AI payment reminders.";
       return;
@@ -958,19 +1016,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     uiState.selectedInvoiceId = inv.id;
 
-    // Find recipient customer email
-    const cust = (metrics.customers || []).find(c => c.id === inv.customerId || c.name === inv.customer);
-    if (recipientInput) {
-      if (cust && cust.email) {
-        recipientInput.value = cust.email;
-      } else {
-        const safeName = (inv.customer || 'client').toLowerCase().replace(/[^a-z0-9]/g, '');
-        recipientInput.value = `finance@${safeName}.com`;
-      }
-    }
-    if (recipientHint) {
-      recipientHint.textContent = cust ? `Linked to ${cust.name}` : `Linked to ${inv.customer}`;
-    }
+    // Safely update recipient input without wiping out user's custom test email
+    updateReminderRecipientField(inv, resetRecipient);
 
     // Build Templates Deterministically for this invoice
     const templates = {
@@ -1375,6 +1422,13 @@ Collections Department | ${store.state.auth.user ? store.state.auth.user.company
         if (emailFromInput && emailConfig.fromEmail) {
           emailFromInput.value = emailConfig.fromEmail;
         }
+
+        const smtpHostInput = document.getElementById('settings-smtp-host');
+        const smtpPortInput = document.getElementById('settings-smtp-port');
+        const smtpUserInput = document.getElementById('settings-smtp-user');
+        if (smtpHostInput && emailConfig.smtpHost) smtpHostInput.value = emailConfig.smtpHost;
+        if (smtpPortInput && emailConfig.smtpPort) smtpPortInput.value = emailConfig.smtpPort;
+        if (smtpUserInput && emailConfig.smtpUser) smtpUserInput.value = emailConfig.smtpUser;
       }
     } catch (e) {
       console.warn('[EMAIL SETTINGS LOAD ERROR]', e);
@@ -1785,9 +1839,48 @@ Collections Department | ${store.state.auth.user ? store.state.auth.user.company
         document.querySelectorAll('.tone-pill-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         uiState.currentTone = btn.getAttribute('data-tone');
-        updateReminderComposer(uiState.selectedInvoiceId, uiState.currentTone);
+        updateReminderComposer(uiState.selectedInvoiceId, uiState.currentTone, false);
       });
     });
+
+    // Recipient Email Real-time Editing & Helpers
+    const reminderRecipientInput = document.getElementById('reminder-recipient-email');
+    if (reminderRecipientInput) {
+      reminderRecipientInput.addEventListener('input', (e) => {
+        uiState.customRecipientEmail = e.target.value.trim();
+        const metrics = store.getComputedMetrics();
+        const inv = (metrics.invoices || []).find(i => i.id === uiState.selectedInvoiceId);
+        updateReminderRecipientField(inv, false);
+      });
+    }
+
+    const useMyEmailBtn = document.getElementById('btn-use-my-email');
+    if (useMyEmailBtn) {
+      useMyEmailBtn.addEventListener('click', () => {
+        const u = store.state.auth.user;
+        if (!u || !u.email) {
+          showToast('No active account session found.');
+          return;
+        }
+        uiState.customRecipientEmail = u.email;
+        if (reminderRecipientInput) reminderRecipientInput.value = u.email;
+        const metrics = store.getComputedMetrics();
+        const inv = (metrics.invoices || []).find(i => i.id === uiState.selectedInvoiceId);
+        updateReminderRecipientField(inv, false);
+        showToast(`Recipient updated to your personal email (${u.email}) for testing!`, 'success');
+      });
+    }
+
+    const resetRecipientBtn = document.getElementById('btn-reset-recipient-email');
+    if (resetRecipientBtn) {
+      resetRecipientBtn.addEventListener('click', () => {
+        uiState.customRecipientEmail = null;
+        const metrics = store.getComputedMetrics();
+        const inv = (metrics.invoices || []).find(i => i.id === uiState.selectedInvoiceId);
+        updateReminderRecipientField(inv, true);
+        showToast('Recipient reset to invoice customer email.');
+      });
+    }
 
     // Reminder Actions
     const copyReminderBtn = document.getElementById('btn-copy-reminder');
@@ -1884,7 +1977,7 @@ Collections Department | ${store.state.auth.user ? store.state.auth.user.company
     const regenReminderBtn = document.getElementById('btn-regen-reminder');
     if (regenReminderBtn) {
       regenReminderBtn.addEventListener('click', () => {
-        updateReminderComposer(uiState.selectedInvoiceId, uiState.currentTone);
+        updateReminderComposer(uiState.selectedInvoiceId, uiState.currentTone, false);
         showToast('Generated fresh AI reminder draft.');
       });
     }
@@ -1970,14 +2063,22 @@ Collections Department | ${store.state.auth.user ? store.state.auth.user.company
         const autoNudge = document.getElementById('settings-auto-nudge').checked;
         const resendKey = document.getElementById('settings-resend-key').value;
         const emailFrom = document.getElementById('settings-email-from').value;
+        const smtpHost = document.getElementById('settings-smtp-host')?.value;
+        const smtpPort = document.getElementById('settings-smtp-port')?.value;
+        const smtpUser = document.getElementById('settings-smtp-user')?.value;
+        const smtpPass = document.getElementById('settings-smtp-pass')?.value;
 
         store.updateSettings({ companyName, gstin, currency, riskThreshold, autoNudge });
 
         // Save Email Settings to Backend if provided
         try {
           const payload = {};
-          if (resendKey.trim()) payload.resendApiKey = resendKey.trim();
-          if (emailFrom.trim()) payload.emailFrom = emailFrom.trim();
+          if (resendKey && resendKey.trim()) payload.resendApiKey = resendKey.trim();
+          if (emailFrom && emailFrom.trim()) payload.emailFrom = emailFrom.trim();
+          if (smtpHost !== undefined && smtpHost.trim()) payload.smtpHost = smtpHost.trim();
+          if (smtpPort !== undefined && smtpPort.trim()) payload.smtpPort = smtpPort.trim();
+          if (smtpUser !== undefined && smtpUser.trim()) payload.smtpUser = smtpUser.trim();
+          if (smtpPass !== undefined && smtpPass.trim()) payload.smtpPass = smtpPass.trim();
 
           if (Object.keys(payload).length > 0) {
             const res = await fetch('/api/settings/email', {

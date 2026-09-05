@@ -481,6 +481,7 @@ app.get('/api/settings/email', (req, res) => {
     maskedKey: maskedKey,
     fromEmail: process.env.EMAIL_FROM || 'RECO Onboarding <onboarding@resend.dev>',
     smtpHost: process.env.SMTP_HOST || '',
+    smtpPort: process.env.SMTP_PORT || '465',
     smtpUser: process.env.SMTP_USER || ''
   });
 });
