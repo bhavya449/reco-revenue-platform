@@ -1448,9 +1448,99 @@
     </div>
   </div>
 
+  <!-- 8. Import Invoices & Ledger Data Modal -->
+  <div id="import-data-modal-backdrop" class="modal-backdrop">
+    <div class="modal-dialog" style="max-width: 720px;">
+      <div class="modal-header">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <div style="width: 32px; height: 32px; background: rgba(37, 52, 79, 0.1); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: var(--space-cadet);">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          </div>
+          <div>
+            <h3 style="font-size: 1.25rem; margin: 0; color: var(--space-cadet);">Import Ledger & Invoices</h3>
+            <p style="font-size: 0.8rem; color: var(--slate-gray); margin: 2px 0 0;">Ingest CSV or JSON invoice records into your workspace ledger.</p>
+          </div>
+        </div>
+        <button id="btn-close-import-modal" class="btn btn-icon btn-ghost">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
 
+      <div class="modal-body">
+        <!-- Import Mode Tabs -->
+        <div style="display: flex; gap: 8px; margin-bottom: 16px; border-bottom: 1px solid var(--border-light); padding-bottom: 12px;">
+          <button type="button" id="tab-import-file" class="btn btn-sm btn-primary import-tab-btn" data-tab="file">Upload CSV / JSON</button>
+          <button type="button" id="tab-import-paste" class="btn btn-sm btn-secondary import-tab-btn" data-tab="paste">Paste Data Text</button>
+          <button type="button" id="tab-import-preset" class="btn btn-sm btn-secondary import-tab-btn" data-tab="preset">Sample Enterprise Batch</button>
+        </div>
 
-  <!-- Toast Notification Container -->
+        <!-- Tab 1: File Upload -->
+        <div id="import-pane-file" class="import-pane">
+          <div id="import-dropzone" style="border: 2px dashed var(--tan-dark); background: var(--bg-cream-soft); border-radius: 10px; padding: 28px 20px; text-align: center; cursor: pointer; transition: all 0.2s ease;">
+            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="color: var(--tan-dark); margin-bottom: 8px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            <div style="font-weight: 700; color: var(--space-cadet); font-size: 0.95rem;">Click to browse or drag & drop CSV / JSON file</div>
+            <div style="font-size: 0.8rem; color: var(--slate-gray); margin-top: 4px;">Supports standard CSV with headers (Customer, Amount, DueDate, Status)</div>
+            <input type="file" id="import-file-input" accept=".csv,.json,text/csv,application/json" style="display: none;">
+          </div>
+
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 12px;">
+            <span style="font-size: 0.8rem; color: var(--slate-gray);">Need a template?</span>
+            <button type="button" id="btn-download-csv-template" class="btn btn-sm btn-ghost" style="color: var(--coffee-dark); font-weight: 600; text-decoration: underline;">
+              📥 Download Sample CSV Template
+            </button>
+          </div>
+        </div>
+
+        <!-- Tab 2: Paste Raw Data -->
+        <div id="import-pane-paste" class="import-pane" style="display: none;">
+          <div class="form-group">
+            <label class="form-label">Paste CSV or JSON records</label>
+            <textarea id="import-paste-textarea" class="form-control" rows="6" placeholder="Customer,Amount,DueDate,Status&#10;Tata Motors,450000,2026-09-20,Pending&#10;Infosys BPO,320000,2026-08-15,Overdue&#10;Apollo Health,180000,2026-09-01,Paid"></textarea>
+          </div>
+          <button type="button" id="btn-parse-paste-data" class="btn btn-sm btn-secondary">Parse Pasted Data</button>
+        </div>
+
+        <!-- Tab 3: Preset Sample Batch -->
+        <div id="import-pane-preset" class="import-pane" style="display: none;">
+          <div style="background: var(--bg-cream-soft); border-radius: 10px; padding: 16px; margin-bottom: 12px;">
+            <strong style="color: var(--space-cadet); font-size: 0.95rem;">Enterprise Demo Receivable Ledger (5 Invoices)</strong>
+            <p style="font-size: 0.85rem; color: var(--slate-gray); margin: 4px 0 10px;">
+              Loads 5 realistic corporate invoices across IT Services, Manufacturing, Healthcare, and Logistics to test AI Risk Calibration and Revenue Forecasting.
+            </p>
+            <button type="button" id="btn-load-preset-batch" class="btn btn-sm btn-tan">Load 5 Sample Invoices into Importer</button>
+          </div>
+        </div>
+
+        <!-- Live Parsed Preview Container -->
+        <div id="import-preview-wrapper" style="margin-top: 16px; display: none;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <strong id="import-preview-summary" style="font-size: 0.88rem; color: var(--space-cadet);">Detected 0 Invoices</strong>
+            <span class="badge badge-tan" id="import-preview-total">Total: ₹0.0L</span>
+          </div>
+          <div style="max-height: 180px; overflow-y: auto; border: 1px solid var(--border-light); border-radius: 8px;">
+            <table class="data-table" style="font-size: 0.82rem; margin: 0;">
+              <thead>
+                <tr>
+                  <th>Customer</th>
+                  <th>Amount</th>
+                  <th>Due Date</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="import-preview-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer" style="display: flex; justify-content: space-between; align-items: center;">
+        <button type="button" id="btn-cancel-import" class="btn btn-secondary">Cancel</button>
+        <button type="button" id="btn-submit-import" class="btn btn-primary" disabled>
+          Import Records & Run AI Scoring
+        </button>
+      </div>
+    </div>
+  </div>
   <div id="toast-container" class="toast-container"></div>
 
   <!-- JavaScript Application Modules -->

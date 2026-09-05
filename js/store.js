@@ -747,6 +747,27 @@ class RecoStore {
     return newInvoice;
   }
 
+  importInvoices(invoicesList) {
+    if (!Array.isArray(invoicesList) || invoicesList.length === 0) return { count: 0, imported: [] };
+    const imported = [];
+    invoicesList.forEach(item => {
+      if (item && item.customer && item.amount !== undefined && item.dueDate) {
+        const added = this.addInvoice({
+          customer: item.customer,
+          amount: parseFloat(item.amount),
+          dueDate: item.dueDate,
+          issueDate: item.issueDate || new Date().toISOString().split('T')[0],
+          status: item.status || 'Pending',
+          category: item.category || 'Corporate Commercial',
+          recommendedAction: item.recommendedAction || 'Monitor',
+          aiNotes: item.aiNotes || 'Imported via CSV/Data Ledger'
+        });
+        if (added) imported.push(added);
+      }
+    });
+    return { count: imported.length, imported };
+  }
+
   editInvoice(id, updateData) {
     const acc = this.getCurrentAccount();
     if (!acc) return false;

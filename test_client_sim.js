@@ -181,8 +181,20 @@ async function runClientSimulation() {
   assert(projectedRecoveredRaw === 850000, 'Simulator projected recovery for ₹10L at 85% target is ₹8.5L');
   assert(unrecoveredRaw === 150000, 'Simulator unrecovered amount is ₹1.5L');
 
-  // Test 7: Verify Switch Back to Demo Account Still Isolated
-  console.log('\n--- 7. Switching Back to Demo Account ---');
+  // Test 7: Batch Data Import Ingestion
+  console.log('\n--- 7. Batch Data Import Ingestion ---');
+  const importResult = store.importInvoices([
+    { customer: 'Imported Enterprise Alpha', amount: 350000, dueDate: '2026-09-20', status: 'Pending' },
+    { customer: 'Imported Enterprise Beta', amount: 420000, dueDate: '2026-08-10', status: 'Overdue' }
+  ]);
+  assert(importResult.count === 2, 'Imported 2 invoices in batch');
+  const postImportMetrics = store.getComputedMetrics();
+  assert(postImportMetrics.invoices.some(i => i.customer === 'Imported Enterprise Alpha'), 'Imported Alpha invoice present in ledger');
+  assert(postImportMetrics.invoices.some(i => i.customer === 'Imported Enterprise Beta'), 'Imported Beta invoice present in ledger');
+  assert(postImportMetrics.customers.some(c => c.name === 'Imported Enterprise Alpha'), 'Auto-created customer profile for Alpha');
+
+  // Test 8: Verify Switch Back to Demo Account Still Isolated
+  console.log('\n--- 8. Switching Back to Demo Account ---');
   store.saveActiveSession(store.DEMO_ACCOUNT_ID);
   const demoMetricsRestored = store.getComputedMetrics();
   assert(demoMetricsRestored.customers.length === 6, 'Demo account still has its 6 standard demo companies');
