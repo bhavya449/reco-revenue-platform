@@ -1331,7 +1331,7 @@ Collections Department | ${store.state.auth.user ? store.state.auth.user.company
     updateReminderComposer(invoiceId, uiState.currentTone);
   }
 
-  function populateSettingsForm() {
+  async function populateSettingsForm() {
     const s = store.state.settings || {};
     const u = store.state.auth.user || {};
 
@@ -1340,12 +1340,45 @@ Collections Department | ${store.state.auth.user ? store.state.auth.user.company
     const currencySelect = document.getElementById('settings-currency');
     const riskSelect = document.getElementById('settings-risk-threshold');
     const autoNudgeCheckbox = document.getElementById('settings-auto-nudge');
+    const resendKeyInput = document.getElementById('settings-resend-key');
+    const emailFromInput = document.getElementById('settings-email-from');
+    const emailBadge = document.getElementById('email-service-status-badge');
+    const testTargetInput = document.getElementById('settings-test-email-target');
 
     if (companyInput) companyInput.value = s.companyName || u.company || "Enterprise Corp";
     if (gstinInput) gstinInput.value = s.gstin || "";
     if (currencySelect) currencySelect.value = s.currency || "INR";
     if (riskSelect) riskSelect.value = s.riskThreshold || "80";
     if (autoNudgeCheckbox) autoNudgeCheckbox.checked = s.autoNudge !== false;
+    if (testTargetInput && u.email) testTargetInput.value = u.email;
+
+    // Load Live Email Service Telemetry from Backend
+    try {
+      const res = await fetch('/api/settings/email');
+      const emailConfig = await res.json();
+      if (emailConfig.success) {
+        if (emailConfig.configured) {
+          if (emailBadge) {
+            emailBadge.textContent = `Connected (${emailConfig.provider})`;
+            emailBadge.className = 'badge badge-green';
+            emailBadge.style.backgroundColor = 'rgba(40, 167, 69, 0.15)';
+            emailBadge.style.color = '#28a745';
+          }
+          if (resendKeyInput) resendKeyInput.placeholder = emailConfig.maskedKey || '••••••••••••••••';
+        } else {
+          if (emailBadge) {
+            emailBadge.textContent = 'API Key Required';
+            emailBadge.className = 'badge badge-caput';
+          }
+          if (resendKeyInput) resendKeyInput.placeholder = 're_123456789...';
+        }
+        if (emailFromInput && emailConfig.fromEmail) {
+          emailFromInput.value = emailConfig.fromEmail;
+        }
+      }
+    } catch (e) {
+      console.warn('[EMAIL SETTINGS LOAD ERROR]', e);
+    }
   }
 
   /* ==========================================================================
@@ -1732,9 +1765,9 @@ Collections Department | ${store.state.auth.user ? store.state.auth.user.company
           }
 
           if (data.success && data.emailSent) {
-            showToast(`📧 Payment reminder sent directly to ${toEmail}!`);
+            showToast(`✅ Payment reminder delivered directly to ${toEmail}!`);
           } else {
-            showToast(`📧 Reminder dispatched to ${toEmail}! (${data.message || 'Queued'})`);
+            showToast(`⚠️ Reminder prepared for ${toEmail}. Add your Resend API Key in Settings to deliver to real inboxes.`);
           }
         } catch (err) {
           console.error('[REMINDER DISPATCH ERROR]', err);
@@ -1823,19 +1856,90 @@ Collections Department | ${store.state.auth.user ? store.state.auth.user.company
       });
     });
 
-    // Settings Form
+    // Settings Form & Email Dispatch Configuration
     const settingsForm = document.getElementById('platform-settings-form');
     if (settingsForm) {
-      settingsForm.addEventListener('submit', (e) => {
+      settingsForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         const companyName = document.getElementById('settings-company-name').value;
         const gstin = document.getElementById('settings-gstin').value;
         const currency = document.getElementById('settings-currency').value;
         const riskThreshold = parseInt(document.getElementById('settings-risk-threshold').value, 10);
         const autoNudge = document.getElementById('settings-auto-nudge').checked;
+        const resendKey = document.getElementById('settings-resend-key').value;
+        const emailFrom = document.getElementById('settings-email-from').value;
 
         store.updateSettings({ companyName, gstin, currency, riskThreshold, autoNudge });
+
+        // Save Email Settings to Backend if provided
+        try {
+          const payload = {};
+          if (resendKey.trim()) payload.resendApiKey = resendKey.trim();
+          if (emailFrom.trim()) payload.emailFrom = emailFrom.trim();
+
+          if (Object.keys(payload).length > 0) {
+            const res = await fetch('/api/settings/email', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(payload)
+            });
+            const data = await res.json();
+            if (data.success) {
+              await populateSettingsForm();
+              showToast('Platform settings & email credentials saved successfully!');
+              return;
+            }
+          }
+        } catch (err) {
+          console.error('[SETTINGS SAVE ERROR]', err);
+        }
+
         showToast('Platform settings saved successfully!');
+      });
+    }
+
+    // Test Email Transmitter Button
+    const testEmailBtn = document.getElementById('btn-test-email-dispatch');
+    if (testEmailBtn) {
+      testEmailBtn.addEventListener('click', async () => {
+        const targetInput = document.getElementById('settings-test-email-target');
+        const targetEmail = targetInput ? targetInput.value.trim() : '';
+
+        if (!targetEmail || !targetEmail.includes('@')) {
+          showToast('Please enter a valid destination email address for verification.');
+          if (targetInput) targetInput.focus();
+          return;
+        }
+
+        const originalBtnHtml = testEmailBtn.innerHTML;
+        testEmailBtn.disabled = true;
+        testEmailBtn.innerHTML = `
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation: spin 1s linear infinite;"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+          Transmitting...
+        `;
+
+        try {
+          const res = await fetch('/api/email/test', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ targetEmail })
+          });
+          const data = await res.json();
+
+          if (data.success && data.emailSent) {
+            showToast(`✅ Test email delivered directly to ${targetEmail}! Check your inbox.`);
+          } else if (data.success && !data.emailSent) {
+            showToast(`⚠️ Test prepared for ${targetEmail}. Enter a valid Resend API Key above to send real emails.`);
+          } else {
+            showToast(`❌ Delivery failed: ${data.message || 'Check email configuration.'}`);
+          }
+        } catch (err) {
+          console.error('[TEST EMAIL ERROR]', err);
+          showToast('❌ Failed to connect to email service.');
+        } finally {
+          testEmailBtn.disabled = false;
+          testEmailBtn.innerHTML = originalBtnHtml;
+        }
       });
     }
 

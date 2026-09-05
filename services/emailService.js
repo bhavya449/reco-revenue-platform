@@ -436,13 +436,48 @@ async function sendWelcomeEmail({ userName, userEmail }) {
   return {
     success: false,
     error: 'NO_EMAIL_CONFIG',
-    message: 'Email service credentials not configured on backend.'
+    message: 'Email service credentials not configured on backend. Add your RESEND_API_KEY in Settings or .env.'
   };
+}
+
+/**
+ * Checks whether live email provider credentials are configured.
+ */
+function isEmailConfigured() {
+  const resendApiKey = process.env.RESEND_API_KEY || process.env.EMAIL_API_KEY;
+  if (resendApiKey && resendApiKey.startsWith('re_') && resendApiKey !== 're_your_api_key_here') {
+    return { configured: true, provider: 'Resend', from: process.env.EMAIL_FROM || 'RECO Onboarding <onboarding@resend.dev>' };
+  }
+  if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS) {
+    return { configured: true, provider: `SMTP (${process.env.SMTP_HOST})`, from: process.env.EMAIL_FROM || 'RECO <onboarding@resend.dev>' };
+  }
+  return { configured: false, provider: 'None', message: 'RESEND_API_KEY or SMTP credentials not configured' };
+}
+
+/**
+ * Dispatches a quick live inbox test email.
+ */
+async function sendTestEmail({ targetEmail }) {
+  const subject = 'RECO AI — Real Email Delivery Verification Test 🚀';
+  const message = `Hello,\n\nThis is a live test notification from your RECO AI Revenue Recovery Platform.\n\nYour email transmission service is connected and verified. All future account registrations, executive notifications, and AI payment reminders will be delivered directly to their designated inboxes.\n\nTimestamp: ${new Date().toUTCString()}\nPlatform Status: Online`;
+
+  return await sendPaymentReminderEmail({
+    toEmail: targetEmail,
+    subject: subject,
+    message: message,
+    customerName: 'RECO Administrator',
+    invoiceId: 'TEST-VERIFY',
+    amount: 500000,
+    dueDate: 'Immediate',
+    senderCompany: 'RECO Enterprise Financial'
+  });
 }
 
 module.exports = {
   sendWelcomeEmail,
   sendPaymentReminderEmail,
+  sendTestEmail,
+  isEmailConfigured,
   generateWelcomeEmailHtml,
   generateWelcomeEmailText,
   generatePaymentReminderEmailHtml,

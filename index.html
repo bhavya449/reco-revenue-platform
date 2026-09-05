@@ -1026,6 +1026,50 @@
                   </label>
                 </div>
 
+                <hr style="margin: 24px 0; border: none; border-top: 1px solid var(--border-light);">
+
+                <!-- Live Email Dispatch Service Configuration -->
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+                  <div>
+                    <h3 style="font-size: 1.2rem; margin-bottom: 4px; color: var(--space-cadet);">Live Email Dispatch Service</h3>
+                    <p style="font-size: 0.85rem; color: var(--slate-gray); margin: 0;">Connect your Resend API Key or custom SMTP to send real emails to customer & personal inboxes.</p>
+                  </div>
+                  <span id="email-service-status-badge" class="badge badge-caput">Configuration Needed</span>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label" style="display: flex; justify-content: space-between; align-items: center;">
+                    <span>Resend API Key (Recommended - Instant & Free at resend.com):</span>
+                    <a href="https://resend.com/api-keys" target="_blank" rel="noopener noreferrer" style="font-size: 0.78rem; color: var(--space-cadet); text-decoration: underline; font-weight: 600;">Get Free Key from resend.com ↗</a>
+                  </label>
+                  <input type="password" id="settings-resend-key" class="form-control" placeholder="re_123456789..." style="font-family: monospace; font-size: 0.85rem;">
+                  <small style="color: var(--slate-gray); font-size: 0.75rem; display: block; margin-top: 4px;">Enter your key starting with <code>re_</code>. It will be saved securely to your backend environment.</small>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">Sender Email / Name (From Header):</label>
+                  <input type="text" id="settings-email-from" class="form-control" placeholder="RECO Onboarding <onboarding@resend.dev>" style="font-size: 0.85rem;">
+                </div>
+
+                <!-- Test Email Transmitter Box -->
+                <div style="margin-top: 16px; background: #FAF8F5; padding: 14px 18px; border-radius: 10px; border: 1px solid rgba(213, 184, 147, 0.4); display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
+                  <div>
+                    <div style="font-size: 0.88rem; font-weight: 700; color: var(--space-cadet); margin-bottom: 2px;">
+                      Test Real Inbox Transmission
+                    </div>
+                    <div style="font-size: 0.78rem; color: var(--slate-gray);">
+                      Send an instant verification email to verify physical inbox receipt.
+                    </div>
+                  </div>
+                  <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                    <input type="email" id="settings-test-email-target" class="form-control" placeholder="your.name@domain.com" style="font-size: 0.82rem; width: 220px;">
+                    <button type="button" id="btn-test-email-dispatch" class="btn btn-sm btn-secondary">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
+                      Send Test Email
+                    </button>
+                  </div>
+                </div>
+
                 <div style="margin-top: 24px; display: flex; justify-content: space-between; align-items: center;">
                   <button type="button" id="btn-reset-app-data" class="btn btn-sm btn-ghost" style="color: var(--caput-mortuum);">
                     Reset Demo Ledger

@@ -8,7 +8,7 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
-const { sendWelcomeEmail, sendPaymentReminderEmail } = require('./services/emailService');
+const { sendWelcomeEmail, sendPaymentReminderEmail, sendTestEmail, isEmailConfigured } = require('./services/emailService');
 
 const app = express();
 const PORT = process.env.PORT || 8080;
@@ -340,6 +340,116 @@ app.post('/api/reminder/send', async (req, res) => {
       success: false,
       error: 'SERVER_ERROR',
       message: 'Failed to process reminder email delivery.'
+    });
+  }
+});
+
+/**
+ * GET /api/settings/email
+ * Returns active email provider configuration status
+ */
+app.get('/api/settings/email', (req, res) => {
+  const status = isEmailConfigured();
+  const rawKey = process.env.RESEND_API_KEY || '';
+  const maskedKey = (rawKey && rawKey.startsWith('re_') && rawKey !== 're_your_api_key_here')
+    ? `${rawKey.substring(0, 5)}••••••••••••${rawKey.substring(rawKey.length - 4)}`
+    : '';
+
+  return res.json({
+    success: true,
+    ...status,
+    maskedKey: maskedKey,
+    fromEmail: process.env.EMAIL_FROM || 'RECO Onboarding <onboarding@resend.dev>',
+    smtpHost: process.env.SMTP_HOST || '',
+    smtpUser: process.env.SMTP_USER || ''
+  });
+});
+
+/**
+ * POST /api/settings/email
+ * Updates Resend API Key or SMTP credentials dynamically at runtime & saves to .env
+ */
+app.post('/api/settings/email', (req, res) => {
+  try {
+    const { resendApiKey, emailFrom, smtpHost, smtpPort, smtpUser, smtpPass } = req.body;
+
+    if (resendApiKey !== undefined && resendApiKey.trim()) {
+      process.env.RESEND_API_KEY = resendApiKey.trim();
+    }
+    if (emailFrom !== undefined && emailFrom.trim()) {
+      process.env.EMAIL_FROM = emailFrom.trim();
+    }
+    if (smtpHost !== undefined) process.env.SMTP_HOST = smtpHost.trim();
+    if (smtpPort !== undefined) process.env.SMTP_PORT = smtpPort.trim();
+    if (smtpUser !== undefined) process.env.SMTP_USER = smtpUser.trim();
+    if (smtpPass !== undefined) process.env.SMTP_PASS = smtpPass.trim();
+
+    // Persist to .env file if it exists or create one
+    const envPath = path.join(__dirname, '.env');
+    const envContent = `# RECO Platform Environment Variables
+PORT=${process.env.PORT || 8080}
+APP_URL=${process.env.APP_URL || 'http://localhost:8080'}
+
+# Transactional Email Configuration (Resend)
+RESEND_API_KEY=${process.env.RESEND_API_KEY || 're_your_api_key_here'}
+EMAIL_FROM=${process.env.EMAIL_FROM || 'RECO Onboarding <onboarding@resend.dev>'}
+
+# Optional SMTP Configuration
+SMTP_HOST=${process.env.SMTP_HOST || ''}
+SMTP_PORT=${process.env.SMTP_PORT || '587'}
+SMTP_USER=${process.env.SMTP_USER || ''}
+SMTP_PASS=${process.env.SMTP_PASS || ''}
+`;
+    fs.writeFileSync(envPath, envContent);
+
+    const status = isEmailConfigured();
+    console.log(`[EMAIL CONFIG UPDATED] Email Provider Status: ${status.provider} (Configured: ${status.configured})`);
+
+    return res.json({
+      success: true,
+      message: 'Email service configuration saved successfully!',
+      ...status
+    });
+  } catch (err) {
+    console.error('[EMAIL SETTINGS SAVE ERROR]', err);
+    return res.status(500).json({
+      success: false,
+      error: 'SERVER_ERROR',
+      message: 'Failed to update email settings.'
+    });
+  }
+});
+
+/**
+ * POST /api/email/test
+ * Dispatches an instant test email to verify live delivery
+ */
+app.post('/api/email/test', async (req, res) => {
+  try {
+    const { targetEmail } = req.body;
+
+    if (!targetEmail || !targetEmail.includes('@')) {
+      return res.status(400).json({
+        success: false,
+        error: 'INVALID_EMAIL',
+        message: 'Please provide a valid destination email address.'
+      });
+    }
+
+    const result = await sendTestEmail({ targetEmail: targetEmail.trim().toLowerCase() });
+    return res.json({
+      success: result.success,
+      emailSent: result.success && !result.simulated,
+      toEmail: targetEmail.trim().toLowerCase(),
+      messageId: result.messageId || null,
+      message: result.message || (result.success ? `Live test email sent to ${targetEmail}!` : 'Failed to send test email.')
+    });
+  } catch (err) {
+    console.error('[TEST EMAIL ERROR]', err);
+    return res.status(500).json({
+      success: false,
+      error: 'SERVER_ERROR',
+      message: 'Exception while transmitting test email.'
     });
   }
 });
