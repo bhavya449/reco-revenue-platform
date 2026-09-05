@@ -1191,33 +1191,11 @@ class RecoStore {
       return { success: true, alreadyActive: true, plan: existing };
     }
 
-    const previous = existing || null;
     acc.quarterlyActionPlan = nextPlan;
-    const saved = this.saveAccountData(this.activeAccountId, acc, { persistRemote: false });
+    const saved = this.saveCurrentAccount(acc);
     if (!saved) {
       return { success: false, message: 'Unable to save strategy. Please try again.' };
     }
-
-    if (this.sessionToken && this.activeAccountId !== this.DEMO_ACCOUNT_ID) {
-      try {
-        const resp = await fetch('/api/account', {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${this.sessionToken}`
-          },
-          body: JSON.stringify({ account: acc })
-        });
-        if (!resp.ok) {
-          throw new Error('remote save failed');
-        }
-      } catch (e) {
-        acc.quarterlyActionPlan = previous;
-        this.saveAccountData(this.activeAccountId, acc, { persistRemote: false });
-        return { success: false, message: 'Unable to save strategy. Please try again.' };
-      }
-    }
-
     return { success: true, alreadyActive: false, plan: nextPlan };
   }
 

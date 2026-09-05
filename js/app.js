@@ -1279,6 +1279,7 @@ Collections Department | ${store.state.auth.user ? store.state.auth.user.company
   }
 
   async function applySimulatorStrategy() {
+    window.recoApplyStrategy = applySimulatorStrategy;
     if (applySimulatorStrategy._busy) return;
     applySimulatorStrategy._busy = true;
     const btn = document.getElementById('btn-apply-strategy') || Array.from(document.querySelectorAll('#view-simulator button')).find(isApplyStrategyButton);
@@ -2101,6 +2102,8 @@ Collections Department | ${store.state.auth.user ? store.state.auth.user.company
     whyChip.setAttribute('data-prompt', `Why is ${top.name} considered high risk?`);
     whyChip.textContent = `🏢 Why is ${top.name.split(' ')[0]} high risk?`;
   }
+
+  window.recoApplyStrategy = applySimulatorStrategy;
 
   // Initial Boot
   setupEventListeners();

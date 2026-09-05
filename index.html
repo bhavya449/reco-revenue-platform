@@ -16,7 +16,7 @@
 
   <!-- Master Stylesheet -->
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <link rel="stylesheet" href="css/style.css?v=qap3">
+  <link rel="stylesheet" href="css/style.css?v=qap4">
 </head>
 <body>
 
@@ -757,6 +757,45 @@
             <p style="color: var(--slate-gray); font-size: 0.92rem;">See how different recovery strategies could impact your revenue.</p>
           </div>
 
+          <article id="quarterly-action-plan-card" class="action-plan-card">
+            <div class="action-plan-header">
+              <div>
+                <div class="action-plan-kicker">Current workspace</div>
+                <h3>Quarterly Action Plan</h3>
+              </div>
+              <span id="qap-status-badge" class="badge badge-paid" style="display:none;">ACTIVE</span>
+            </div>
+            <div id="qap-empty-state" class="action-plan-empty">
+              No strategy has been applied yet. Adjust the recovery target and levers above, then click Apply Strategy to save a plan for this account.
+            </div>
+            <div id="qap-active-state" style="display:none;">
+              <div class="action-plan-metrics">
+                <div class="action-plan-metric">
+                  <label>Recovery Target</label>
+                  <strong id="qap-target">—</strong>
+                </div>
+                <div class="action-plan-metric">
+                  <label>Projected Recovery</label>
+                  <strong id="qap-projected">—</strong>
+                </div>
+                <div class="action-plan-metric">
+                  <label>Current Recovery</label>
+                  <strong id="qap-current">—</strong>
+                </div>
+                <div class="action-plan-metric">
+                  <label>Potential Additional</label>
+                  <strong id="qap-additional">—</strong>
+                </div>
+              </div>
+              <div class="action-plan-levers-label">Selected Recovery Levers</div>
+              <ul id="qap-levers-list" class="action-plan-levers"></ul>
+              <div class="action-plan-meta">
+                <span>Status: <strong id="qap-status">ACTIVE</strong></span>
+                <span>Applied: <strong id="qap-applied">—</strong></span>
+              </div>
+            </div>
+          </article>
+
           <div class="simulator-grid">
             <!-- Controls -->
             <div class="simulator-controls-card">
@@ -846,7 +885,7 @@
                   <div style="font-size: 0.78rem; color: #CAD5E2;">Unrecovered Amount</div>
                   <strong id="sim-unrecovered-value" style="font-size: 1.1rem; color: #FFA4A9;">₹0.0L</strong>
                 </div>
-                <button type="button" id="btn-apply-strategy" class="btn btn-tan">
+                <button type="button" id="btn-apply-strategy" class="btn btn-tan" onclick="window.recoApplyStrategy && window.recoApplyStrategy(); return false;">
                   Apply Strategy
                 </button>
               </div>
@@ -854,44 +893,6 @@
             </div>
           </div>
 
-          <article id="quarterly-action-plan-card" class="action-plan-card">
-            <div class="action-plan-header">
-              <div>
-                <div class="action-plan-kicker">Current workspace</div>
-                <h3>Quarterly Action Plan</h3>
-              </div>
-              <span id="qap-status-badge" class="badge badge-paid" style="display:none;">ACTIVE</span>
-            </div>
-            <div id="qap-empty-state" class="action-plan-empty">
-              No strategy has been applied yet. Adjust the recovery target and levers above, then click Apply Strategy to save a plan for this account.
-            </div>
-            <div id="qap-active-state" style="display:none;">
-              <div class="action-plan-metrics">
-                <div class="action-plan-metric">
-                  <label>Recovery Target</label>
-                  <strong id="qap-target">—</strong>
-                </div>
-                <div class="action-plan-metric">
-                  <label>Projected Recovery</label>
-                  <strong id="qap-projected">—</strong>
-                </div>
-                <div class="action-plan-metric">
-                  <label>Current Recovery</label>
-                  <strong id="qap-current">—</strong>
-                </div>
-                <div class="action-plan-metric">
-                  <label>Potential Additional</label>
-                  <strong id="qap-additional">—</strong>
-                </div>
-              </div>
-              <div class="action-plan-levers-label">Selected Recovery Levers</div>
-              <ul id="qap-levers-list" class="action-plan-levers"></ul>
-              <div class="action-plan-meta">
-                <span>Status: <strong id="qap-status">ACTIVE</strong></span>
-                <span>Applied: <strong id="qap-applied">—</strong></span>
-              </div>
-            </div>
-          </article>
         </section>
 
         <!-- ====================================================================
@@ -1368,7 +1369,7 @@
   <div id="toast-container" class="toast-container"></div>
 
   <!-- JavaScript Application Modules -->
-  <script src="js/store.js?v=qap3"></script>
-  <script src="js/app.js?v=qap3"></script>
+  <script src="js/store.js?v=qap4"></script>
+  <script src="js/app.js?v=qap4"></script>
 </body>
 </html>
