@@ -492,7 +492,7 @@
               </button>
             </div>
 
-            <p class="ai-banner-summary">
+            <p id="ai-banner-summary" class="ai-banner-summary">
               "I analyzed 1,284 invoices and identified 37 payments that require immediate attention."
             </p>
 
@@ -511,8 +511,8 @@
                   <span class="ai-insight-tag">UPCOMING RISK</span>
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20"/><path d="m17 5-5-3-5 3"/><path d="m17 19-5 3-5-3"/></svg>
                 </div>
-                <h4>82 Invoices</h4>
-                <p>May become overdue within 7 days based on current client payment pacing.</p>
+                <h4 id="ai-upcoming-risk-count">82 Invoices</h4>
+                <p id="ai-upcoming-risk-desc">May become overdue within 7 days based on current client payment pacing.</p>
               </div>
 
               <div class="ai-insight-card">
@@ -521,7 +521,7 @@
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
                 </div>
                 <h4 id="ai-opportunity-amount">₹6.8L Potential</h4>
-                <p>Could potentially be recovered this month by deploying targeted early discounts.</p>
+                <p id="ai-opportunity-desc">Could potentially be recovered this month by deploying targeted early discounts.</p>
               </div>
             </div>
           </div>
@@ -565,7 +565,7 @@
               <p style="color: var(--slate-gray); font-size: 0.9rem;">Track, filter, and recover outstanding accounts.</p>
             </div>
             <div style="display: flex; gap: 10px;">
-              <button class="btn btn-secondary" id="btn-import-data" onclick="alert('Import feature: Ingest data via CSV or connect directly to Tally/QuickBooks.')">
+              <button class="btn btn-secondary" id="btn-import-data">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
                 Import Data
               </button>
@@ -625,9 +625,15 @@
               <h2 style="font-size: 1.6rem; font-family: var(--font-display);">Customer Intelligence</h2>
               <p style="color: var(--slate-gray); font-size: 0.9rem;">AI behavioral risk profiling and payment predictability.</p>
             </div>
-            <div class="search-input-wrap" style="width: 320px;">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-              <input type="text" id="customer-search-input" class="form-control" placeholder="Search customer accounts...">
+            <div style="display: flex; gap: 10px; align-items: center;">
+              <div class="search-input-wrap" style="width: 280px;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <input type="text" id="customer-search-input" class="form-control" placeholder="Search customer accounts...">
+              </div>
+              <button class="btn btn-primary" id="btn-open-add-customer">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                + Add Customer
+              </button>
             </div>
           </div>
 
@@ -675,8 +681,8 @@
                 <button class="prompt-chip" data-prompt="How much revenue is currently at risk?">
                   ⚠️ Revenue at risk?
                 </button>
-                <button class="prompt-chip" data-prompt="Why is ABC Constructions considered high risk?">
-                  🏢 Why is ABC Constructions high risk?
+                <button class="prompt-chip" data-prompt="Which customers have the worst payment behavior?">
+                  📊 Payment delay behavior?
                 </button>
               </div>
 
@@ -757,11 +763,11 @@
               <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 24px;">
                 <div style="background: var(--bg-cream-soft); padding: 14px; border-radius: 8px;">
                   <div style="font-size: 0.76rem; color: var(--slate-gray); text-transform: uppercase; font-weight: 700;">Current Outstanding</div>
-                  <div class="sim-outstanding-stat" style="font-size: 1.5rem; font-weight: 800; color: var(--space-cadet);">₹42.6L</div>
+                  <div id="sim-baseline-outstanding" class="sim-outstanding-stat" style="font-size: 1.5rem; font-weight: 800; color: var(--space-cadet);">₹0.0L</div>
                 </div>
                 <div style="background: var(--bg-cream-soft); padding: 14px; border-radius: 8px;">
                   <div style="font-size: 0.76rem; color: var(--slate-gray); text-transform: uppercase; font-weight: 700;">Current Recovery Rate</div>
-                  <div style="font-size: 1.5rem; font-weight: 800; color: var(--coffee);">68%</div>
+                  <div id="sim-baseline-rate" style="font-size: 1.5rem; font-weight: 800; color: var(--coffee);">0%</div>
                 </div>
               </div>
 
@@ -808,7 +814,7 @@
 
               <div style="margin-top: 20px;">
                 <div style="font-size: 0.85rem; text-transform: uppercase; color: #CAD5E2; letter-spacing: 0.05em;">Projected Recovery</div>
-                <div id="sim-projected-value" class="sim-metric-big">₹10.3L</div>
+                <div id="sim-projected-value" class="sim-metric-big">₹0.0L</div>
               </div>
 
               <!-- Visual Progress Gauge -->
@@ -825,20 +831,20 @@
               <div class="sim-breakdown-row">
                 <div class="sim-stat">
                   <label>Current Recovery</label>
-                  <span>₹8.2L</span>
+                  <span id="sim-current-recovered">₹0.0L</span>
                 </div>
                 <div class="sim-stat">
                   <label>Potential Additional</label>
-                  <span id="sim-additional-value" style="color: var(--tan);">+₹2.1L</span>
+                  <span id="sim-additional-value" style="color: var(--tan);">+₹0.0L</span>
                 </div>
               </div>
 
               <div style="display: flex; justify-content: space-between; align-items: center; padding-top: 10px;">
                 <div>
                   <div style="font-size: 0.78rem; color: #CAD5E2;">Unrecovered Amount</div>
-                  <strong id="sim-unrecovered-value" style="font-size: 1.1rem; color: #FFA4A9;">₹32.3L</strong>
+                  <strong id="sim-unrecovered-value" style="font-size: 1.1rem; color: #FFA4A9;">₹0.0L</strong>
                 </div>
-                <button class="btn btn-tan" onclick="alert('Simulation strategy blueprint saved to your Quarterly Action Plan.')">
+                <button id="btn-apply-strategy" class="btn btn-tan">
                   Apply Strategy
                 </button>
               </div>
@@ -856,7 +862,7 @@
               <p style="color: var(--slate-gray); font-size: 0.9rem;">Comprehensive portfolio performance and debtor behavior metrics.</p>
             </div>
             <div style="display: flex; gap: 10px;">
-              <button class="btn btn-secondary" onclick="window.print()">
+              <button id="btn-print-reports" class="btn btn-secondary">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect width="12" height="8" x="6" y="14"/></svg>
                 Print Summary
               </button>
@@ -870,23 +876,23 @@
           <div class="reports-kpi-summary">
             <div class="kpi-card">
               <div class="kpi-label">Avg Recovery Cycle</div>
-              <div class="kpi-value" style="font-size: 1.6rem;">14.2 Days</div>
-              <div class="kpi-trend positive">-3.1 days improvement</div>
+              <div id="rep-kpi-cycle" class="kpi-value" style="font-size: 1.6rem;">14.2 Days</div>
+              <div class="kpi-trend positive">Portfolio baseline</div>
             </div>
             <div class="kpi-card">
               <div class="kpi-label">Automated Reminder ROI</div>
-              <div class="kpi-value" style="font-size: 1.6rem; color: var(--tan-dark);">84.6%</div>
+              <div id="rep-kpi-roi" class="kpi-value" style="font-size: 1.6rem; color: var(--tan-dark);">84.6%</div>
               <div class="kpi-trend">Settled within 48 hours</div>
             </div>
             <div class="kpi-card">
               <div class="kpi-label">High-Risk Exposure</div>
-              <div class="kpi-value" style="font-size: 1.6rem; color: var(--caput-mortuum);">29.1%</div>
+              <div id="rep-kpi-exposure" class="kpi-value" style="font-size: 1.6rem; color: var(--caput-mortuum);">29.1%</div>
               <div class="kpi-trend negative">Of total receivables</div>
             </div>
             <div class="kpi-card">
               <div class="kpi-label">DSO (Days Sales Out)</div>
-              <div class="kpi-value" style="font-size: 1.6rem;">38 Days</div>
-              <div class="kpi-trend positive">Industry top quartile</div>
+              <div id="rep-kpi-dso" class="kpi-value" style="font-size: 1.6rem;">38 Days</div>
+              <div class="kpi-trend positive">Operating turnaround</div>
             </div>
           </div>
 
@@ -953,9 +959,9 @@
           <div class="settings-grid">
             <!-- Settings Navigation -->
             <div class="settings-nav">
-              <button class="settings-nav-btn active">Company Profile</button>
-              <button class="settings-nav-btn" onclick="alert('Notification frequency is set to instant push and daily digest.')">Notification Preferences</button>
-              <button class="settings-nav-btn" onclick="alert('AI risk calculation calibration active: Multi-factor weighted delay scoring.')">AI Risk Preferences</button>
+              <button class="settings-nav-btn active" data-section="profile">Company Profile</button>
+              <button class="settings-nav-btn" data-section="notifications">Notification Preferences</button>
+              <button class="settings-nav-btn" data-section="ai">AI Risk Preferences</button>
               <button class="settings-nav-btn logout-trigger-btn" style="color: var(--caput-mortuum); margin-top: 20px;">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:inline; vertical-align:middle; margin-right:6px;"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
                 Sign Out / Logout
@@ -1149,14 +1155,125 @@
         </div>
       </div>
 
-      <div class="modal-footer">
-        <button class="btn btn-secondary" onclick="document.getElementById('customer-modal-backdrop').classList.remove('active')">Close</button>
-        <button class="btn btn-primary" onclick="document.getElementById('customer-modal-backdrop').classList.remove('active'); window.location.hash='#copilot';">Draft Reminder Draft →</button>
+      <div class="modal-footer" style="display: flex; justify-content: space-between; align-items: center; gap: 8px;">
+        <div style="display: flex; gap: 8px;">
+          <button id="btn-modal-edit-customer" class="btn btn-sm btn-secondary">Edit Customer</button>
+          <button id="btn-modal-delete-customer" class="btn btn-sm btn-danger">Delete</button>
+        </div>
+        <div style="display: flex; gap: 8px;">
+          <button id="btn-modal-close-customer" class="btn btn-secondary">Close</button>
+          <button id="btn-modal-draft-reminder" class="btn btn-primary">Draft Reminder →</button>
+        </div>
       </div>
     </div>
   </div>
 
-  <!-- 3. Add Invoice Modal -->
+  <!-- 3. Add Customer Modal -->
+  <div id="add-customer-modal-backdrop" class="modal-backdrop">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 style="font-size: 1.25rem;">+ Add Customer Profile</h3>
+        <button id="btn-close-add-customer" class="btn btn-icon btn-ghost">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+
+      <form id="add-customer-form">
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label">Company / Debtor Name</label>
+            <input type="text" id="new-cust-name" class="form-control" placeholder="e.g. Apex Global Logistics" required>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Industry / Category</label>
+            <input type="text" id="new-cust-category" class="form-control" placeholder="e.g. Manufacturing, Retail Distribution">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Contact Person</label>
+            <input type="text" id="new-cust-contact" class="form-control" placeholder="e.g. Rahul Sharma (Finance Head)">
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+            <div class="form-group">
+              <label class="form-label">Finance Email</label>
+              <input type="email" id="new-cust-email" class="form-control" placeholder="accounts@company.com">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Phone Number</label>
+              <input type="tel" id="new-cust-phone" class="form-control" placeholder="+91 98765 43210">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Historical Average Payment Delay (Days)</label>
+            <input type="number" id="new-cust-avg-delay" class="form-control" value="5" min="0" max="180">
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" id="btn-cancel-add-customer">Cancel</button>
+          <button type="submit" class="btn btn-primary">Create Customer</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 4. Edit Customer Modal -->
+  <div id="edit-customer-modal-backdrop" class="modal-backdrop">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 style="font-size: 1.25rem;">Edit Customer Profile</h3>
+        <button id="btn-close-edit-customer" class="btn btn-icon btn-ghost">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+
+      <form id="edit-customer-form">
+        <input type="hidden" id="edit-cust-id">
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label">Company / Debtor Name</label>
+            <input type="text" id="edit-cust-name" class="form-control" required>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Industry / Category</label>
+            <input type="text" id="edit-cust-category" class="form-control">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Contact Person</label>
+            <input type="text" id="edit-cust-contact" class="form-control">
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+            <div class="form-group">
+              <label class="form-label">Finance Email</label>
+              <input type="email" id="edit-cust-email" class="form-control">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Phone Number</label>
+              <input type="tel" id="edit-cust-phone" class="form-control">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Historical Average Payment Delay (Days)</label>
+            <input type="number" id="edit-cust-avg-delay" class="form-control" min="0" max="180">
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" id="btn-cancel-edit-customer">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Changes</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 5. Add Invoice Modal -->
   <div id="add-invoice-modal-backdrop" class="modal-backdrop">
     <div class="modal-dialog">
       <div class="modal-header">
@@ -1175,7 +1292,7 @@
 
           <div class="form-group">
             <label class="form-label">Invoice Amount (₹ INR)</label>
-            <input type="number" id="new-inv-amount" class="form-control" placeholder="e.g. 250000" min="1000" required>
+            <input type="number" id="new-inv-amount" class="form-control" placeholder="e.g. 250000" min="1" step="any" required>
           </div>
 
           <div class="form-group">
@@ -1201,7 +1318,7 @@
     </div>
   </div>
 
-  <!-- 4. Edit Invoice Modal -->
+  <!-- 6. Edit Invoice Modal -->
   <div id="edit-invoice-modal-backdrop" class="modal-backdrop">
     <div class="modal-dialog">
       <div class="modal-header">
@@ -1221,7 +1338,7 @@
 
           <div class="form-group">
             <label class="form-label">Invoice Amount (₹ INR)</label>
-            <input type="number" id="edit-inv-amount" class="form-control" min="1000" required>
+            <input type="number" id="edit-inv-amount" class="form-control" min="1" step="any" required>
           </div>
 
           <div class="form-group">
@@ -1257,7 +1374,7 @@
     </div>
   </div>
 
-  <!-- 5. AI Full Analysis Modal -->
+  <!-- 7. AI Full Analysis Modal -->
   <div id="ai-analysis-modal-backdrop" class="modal-backdrop">
     <div class="modal-dialog" style="max-width: 650px;">
       <div class="modal-header">
@@ -1272,24 +1389,24 @@
 
       <div class="modal-body">
         <div style="background: var(--bg-cream-soft); padding: 18px; border-radius: 10px; margin-bottom: 18px;">
-          <strong style="color: var(--space-cadet); font-size: 1rem;">Portfolio Synthesis for August 2026</strong>
-          <p style="font-size: 0.9rem; color: var(--slate-gray); margin-top: 4px;">
-            The model completed multi-variable risk evaluation across active ledger accounts.
+          <strong id="ai-analysis-title" style="color: var(--space-cadet); font-size: 1rem;">Portfolio AI Risk Synthesis</strong>
+          <p id="ai-analysis-subtitle" style="font-size: 0.9rem; color: var(--slate-gray); margin-top: 4px;">
+            Continuous multi-variable risk evaluation across active ledger accounts.
           </p>
         </div>
 
         <div style="display: flex; flex-direction: column; gap: 12px;">
           <div style="border-left: 4px solid var(--caput-mortuum); padding: 12px 16px; background: rgba(99, 32, 36, 0.04); border-radius: 6px;">
             <strong style="color: var(--caput-mortuum); font-size: 0.88rem;">Key Vulnerability:</strong>
-            <p style="font-size: 0.88rem; color: var(--space-cadet); margin-top: 2px;">
-              Accounts like Zenith Automations and ABC Constructions contribute to significant high-risk overdue exposure.
+            <p id="ai-analysis-vuln-desc" style="font-size: 0.88rem; color: var(--space-cadet); margin-top: 2px;">
+              Analyzing overdue velocity and risk concentration...
             </p>
           </div>
 
           <div style="border-left: 4px solid var(--tan-dark); padding: 12px 16px; background: var(--tan-15); border-radius: 6px;">
             <strong style="color: var(--coffee-dark); font-size: 0.88rem;">Recommended Action Plan:</strong>
-            <p style="font-size: 0.88rem; color: var(--space-cadet); margin-top: 2px;">
-              1. Enable automated WhatsApp pre-due reminders 48h before due dates.<br>
+            <p id="ai-analysis-action-desc" style="font-size: 0.88rem; color: var(--space-cadet); margin-top: 2px;">
+              1. Enable automated pre-due payment reminders 48h before maturity.<br>
               2. Offer 2% early settlement discount to high-aging accounts.<br>
               3. Trigger executive escalation on invoices overdue by more than 14 days.
             </p>

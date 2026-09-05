@@ -251,6 +251,54 @@ app.post('/api/auth/login', (req, res) => {
 });
 
 /**
+ * GET /api/account/:id
+ * Retrieve isolated account state from server database
+ */
+app.get('/api/account/:id', (req, res) => {
+  try {
+    const accountId = req.params.id;
+    if (accountId === 'acc_demo_vikram') {
+      return res.json({ success: true, accountId, isDemo: true });
+    }
+    const db = readDb();
+    const accountData = db.accounts ? db.accounts[accountId] : null;
+    if (!accountData) {
+      return res.status(404).json({ success: false, message: 'Account data not found' });
+    }
+    return res.json({ success: true, data: accountData });
+  } catch (err) {
+    console.error('[GET ACCOUNT ERROR]', err);
+    return res.status(500).json({ success: false, message: 'Server error retrieving account data' });
+  }
+});
+
+/**
+ * PUT /api/account/:id
+ * Sync account data updates to server database
+ */
+app.put('/api/account/:id', (req, res) => {
+  try {
+    const accountId = req.params.id;
+    if (accountId === 'acc_demo_vikram') {
+      return res.json({ success: true, message: 'Demo account updated' });
+    }
+    const db = readDb();
+    if (!db.accounts) db.accounts = {};
+    const existing = db.accounts[accountId] || {};
+    db.accounts[accountId] = {
+      ...existing,
+      ...req.body,
+      updatedAt: new Date().toISOString()
+    };
+    writeDb(db);
+    return res.json({ success: true });
+  } catch (err) {
+    console.error('[PUT ACCOUNT ERROR]', err);
+    return res.status(500).json({ success: false, message: 'Server error saving account data' });
+  }
+});
+
+/**
  * GET /api/health
  */
 app.get('/api/health', (req, res) => {

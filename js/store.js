@@ -360,6 +360,18 @@ class RecoStore {
     } catch (e) {
       console.warn(`Error saving data for account ${accountId}:`, e);
     }
+
+    // Async sync to server database if available
+    if (accountId && accountId !== this.DEMO_ACCOUNT_ID && typeof fetch !== 'undefined') {
+      try {
+        fetch(`/api/account/${accountId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+        }).catch(() => {});
+      } catch (err) {}
+    }
+
     this.notify();
   }
 
@@ -415,9 +427,13 @@ class RecoStore {
       return { score: 0, level: 'LOW', daysOverdue: 0 };
     }
 
-    const today = new Date('2026-09-03');
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
     const dueDate = new Date(invoice.dueDate);
-    const diffTime = today - dueDate;
+    dueDate.setHours(0, 0, 0, 0);
+
+    const diffTime = today.getTime() - dueDate.getTime();
     const daysOverdue = Math.max(0, Math.ceil(diffTime / (1000 * 60 * 60 * 24)));
 
     // Look up customer characteristics strictly from this account's customers
@@ -500,7 +516,7 @@ class RecoStore {
       };
     });
 
-    // Monthly Recovery Trends (Calculated for current account)
+    // Monthly Recovery Trends (Calculated dynamically for current account)
     let trendRecovered = [0, 0, 0, 0, 0, 0];
     let trendAtRisk = [0, 0, 0, 0, 0, 0];
 
@@ -540,13 +556,17 @@ class RecoStore {
 
     // Enriched Customers strictly derived from this account
     const enrichedCustomers = acc.customers.map(cust => {
-      const custInvoices = enrichedInvoices.filter(i => i.customerId === cust.id || i.customer.toLowerCase() === cust.name.toLowerCase());
+      const custInvoices = enrichedInvoices.filter(i => i.customerId === cust.id || (i.customer && i.customer.toLowerCase() === cust.name.toLowerCase()));
       const custOutstanding = custInvoices.filter(i => i.status !== 'Paid').reduce((sum, i) => sum + i.amount, 0);
-      const custPaidCount = custInvoices.filter(i => i.status === 'Paid').length;
+      const custPaidInvoices = custInvoices.filter(i => i.status === 'Paid');
+      const custPaidAmount = custPaidInvoices.reduce((sum, i) => sum + i.amount, 0);
+      const custPaidCount = custPaidInvoices.length;
       const onTimeRate = custInvoices.length > 0 ? Math.round((custPaidCount / custInvoices.length) * 100) : 100;
 
-      const maxRisk = custInvoices.reduce((max, i) => Math.max(max, i.riskScore), 15);
+      const maxRisk = custInvoices.length > 0 ? custInvoices.reduce((max, i) => Math.max(max, i.riskScore), 0) : 15;
       const riskLevel = maxRisk >= 80 ? 'HIGH' : (maxRisk >= 50 ? 'MEDIUM' : 'LOW');
+
+      const totalRec = (cust.totalRecovered || 0) + custPaidAmount;
 
       return {
         ...cust,
@@ -555,6 +575,7 @@ class RecoStore {
         invoicesCount: custInvoices.length,
         paidOnTime: `${onTimeRate}%`,
         avgDelay: `${cust.avgDelayDays || 0} days`,
+        totalRecovered: totalRec,
         riskScore: maxRisk,
         riskLevel: riskLevel,
         recentInvoices: custInvoices.map(i => i.id)
@@ -631,19 +652,46 @@ class RecoStore {
     if (!acc) return null;
 
     const accountId = acc.user.id;
-    const newId = `INV-${1000 + acc.invoices.length + 1}`;
+
+    // Unique collision-proof ID generation
+    let maxIdNum = 1000;
+    acc.invoices.forEach(i => {
+      if (i.id) {
+        const match = i.id.match(/\d+/);
+        if (match) {
+          const n = parseInt(match[0], 10);
+          if (!isNaN(n) && n > maxIdNum) maxIdNum = n;
+        }
+      }
+    });
+    const newId = `INV-${maxIdNum + 1}`;
 
     // Find or create customer strictly inside this account
-    let cust = acc.customers.find(c => c.name.toLowerCase() === invoiceData.customer.toLowerCase());
-    let customerId = cust ? cust.id : `CUST-${Date.now().toString().slice(-4)}`;
+    let cust = acc.customers.find(c => c.name.toLowerCase() === invoiceData.customer.trim().toLowerCase());
+    
+    let customerId = cust ? cust.id : null;
+    if (!customerId) {
+      let maxCustNum = 0;
+      acc.customers.forEach(c => {
+        if (c.id) {
+          const match = c.id.match(/\d+/);
+          if (match) {
+            const n = parseInt(match[0], 10);
+            if (!isNaN(n) && n > maxCustNum) maxCustNum = n;
+          }
+        }
+      });
+      customerId = `CUST-${String(maxCustNum + 1).padStart(3, '0')}`;
+    }
 
     if (!cust) {
+      const cleanName = invoiceData.customer.trim();
       const newCustomer = {
         id: customerId,
         accountId: accountId,
-        name: invoiceData.customer,
+        name: cleanName,
         category: invoiceData.category || "Corporate Commercial",
-        email: `finance@${invoiceData.customer.toLowerCase().replace(/[^a-z0-9]/g, '')}.com`,
+        email: `finance@${cleanName.toLowerCase().replace(/[^a-z0-9]/g, '')}.com`,
         phone: "+91 98000 " + Math.floor(10000 + Math.random() * 90000),
         contactPerson: "Finance Lead",
         avgDelayDays: 5,
@@ -659,8 +707,8 @@ class RecoStore {
       id: newId,
       accountId: accountId,
       customerId: customerId,
-      customer: invoiceData.customer,
-      amount: parseFloat(invoiceData.amount),
+      customer: invoiceData.customer.trim(),
+      amount: Math.max(1, parseFloat(invoiceData.amount) || 0),
       issueDate: invoiceData.issueDate || new Date().toISOString().split('T')[0],
       dueDate: invoiceData.dueDate,
       status: invoiceData.status || "Pending",
@@ -706,10 +754,15 @@ class RecoStore {
     const index = acc.invoices.findIndex(i => i.id === id);
     if (index === -1) return false;
 
+    const currentInv = acc.invoices[index];
+    const newCustomerName = updateData.customer ? updateData.customer.trim() : currentInv.customer;
+    const newAmount = updateData.amount !== undefined ? Math.max(0, parseFloat(updateData.amount) || 0) : currentInv.amount;
+
     acc.invoices[index] = {
-      ...acc.invoices[index],
+      ...currentInv,
       ...updateData,
-      amount: parseFloat(updateData.amount !== undefined ? updateData.amount : acc.invoices[index].amount)
+      customer: newCustomerName,
+      amount: newAmount
     };
 
     this.saveCurrentAccount(acc);
@@ -730,6 +783,125 @@ class RecoStore {
       type: 'ai-insight',
       title: 'INVOICE DELETED',
       message: `Invoice #${id} was deleted from your ledger.`,
+      timestamp: "Just now",
+      read: false,
+      invoiceId: null
+    });
+
+    this.saveCurrentAccount(acc);
+    return true;
+  }
+
+  /* ==========================================================================
+     Customer Management CRUD Operations (Strictly isolated by Account ID)
+     ========================================================================== */
+  addCustomer(customerData) {
+    const acc = this.getCurrentAccount();
+    if (!acc) return null;
+
+    const accountId = acc.user.id;
+    const cleanName = (customerData.name || "").trim();
+    if (!cleanName) return null;
+
+    // Check if customer already exists in this account
+    let existing = acc.customers.find(c => c.name.toLowerCase() === cleanName.toLowerCase());
+    if (existing) {
+      return existing;
+    }
+
+    let maxCustNum = 0;
+    acc.customers.forEach(c => {
+      if (c.id) {
+        const match = c.id.match(/\d+/);
+        if (match) {
+          const n = parseInt(match[0], 10);
+          if (!isNaN(n) && n > maxCustNum) maxCustNum = n;
+        }
+      }
+    });
+    const customerId = `CUST-${String(maxCustNum + 1).padStart(3, '0')}`;
+
+    const newCustomer = {
+      id: customerId,
+      accountId: accountId,
+      name: cleanName,
+      category: (customerData.category || "Corporate Commercial").trim(),
+      email: (customerData.email || `finance@${cleanName.toLowerCase().replace(/[^a-z0-9]/g, '')}.com`).trim(),
+      phone: (customerData.phone || "+91 98000 " + Math.floor(10000 + Math.random() * 90000)).trim(),
+      contactPerson: (customerData.contactPerson || "Finance Lead").trim(),
+      avgDelayDays: Math.max(0, parseInt(customerData.avgDelayDays, 10) || 5),
+      historyDelayRate: 0.15,
+      totalRecovered: 0,
+      riskProgression: [20, 25, 30],
+      aiAssessment: customerData.aiAssessment || "Debtor profile registered in account. Active behavioral tracking enabled."
+    };
+
+    acc.customers.unshift(newCustomer);
+    acc.notifications.unshift({
+      id: `NOTIF-${Date.now()}`,
+      accountId: accountId,
+      type: 'ai-insight',
+      title: 'CUSTOMER REGISTERED',
+      message: `Customer profile created for ${newCustomer.name}.`,
+      timestamp: "Just now",
+      read: false,
+      invoiceId: null
+    });
+
+    this.saveCurrentAccount(acc);
+    return newCustomer;
+  }
+
+  editCustomer(id, updateData) {
+    const acc = this.getCurrentAccount();
+    if (!acc) return false;
+
+    const index = acc.customers.findIndex(c => c.id === id);
+    if (index === -1) return false;
+
+    const currentCust = acc.customers[index];
+    const oldName = currentCust.name;
+    const newName = updateData.name ? updateData.name.trim() : oldName;
+
+    acc.customers[index] = {
+      ...currentCust,
+      ...updateData,
+      name: newName,
+      category: updateData.category ? updateData.category.trim() : currentCust.category,
+      email: updateData.email ? updateData.email.trim() : currentCust.email,
+      phone: updateData.phone ? updateData.phone.trim() : currentCust.phone,
+      contactPerson: updateData.contactPerson ? updateData.contactPerson.trim() : currentCust.contactPerson,
+      avgDelayDays: updateData.avgDelayDays !== undefined ? Math.max(0, parseInt(updateData.avgDelayDays, 10) || 0) : currentCust.avgDelayDays
+    };
+
+    // If customer name changed, update associated invoices customer string
+    if (newName !== oldName) {
+      acc.invoices.forEach(inv => {
+        if (inv.customerId === id || (inv.customer && inv.customer.toLowerCase() === oldName.toLowerCase())) {
+          inv.customer = newName;
+          inv.customerId = id;
+        }
+      });
+    }
+
+    this.saveCurrentAccount(acc);
+    return true;
+  }
+
+  deleteCustomer(id) {
+    const acc = this.getCurrentAccount();
+    if (!acc) return false;
+
+    const cust = acc.customers.find(c => c.id === id);
+    if (!cust) return false;
+
+    acc.customers = acc.customers.filter(c => c.id !== id);
+    acc.notifications.unshift({
+      id: `NOTIF-${Date.now()}`,
+      accountId: acc.user.id,
+      type: 'ai-insight',
+      title: 'CUSTOMER REMOVED',
+      message: `Customer profile for ${cust.name} removed from your workspace.`,
       timestamp: "Just now",
       read: false,
       invoiceId: null
@@ -863,7 +1035,6 @@ class RecoStore {
       const data = await resp.json();
 
       if (!resp.ok || !data.success) {
-        // e.g. Duplicate account error: "An account with this email already exists. Please log in instead."
         return {
           success: false,
           error: data.error,
